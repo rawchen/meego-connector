@@ -1,0 +1,16 @@
+server:
+  port: 8088
+#  servlet:
+#    context-path: /meego-connector
+spring:
+  application:
+    name: meego-connector
+  datasource:
+#    driver-class-name: com.mysql.cj.jdbc.Driver
+#    url: ${MEEGO_CONNECTOR_URL:url}
+#    username: ${MEEGO_CONNECTOR_USERNAME:root}
+#    password: ${MEEGO_CONNECTOR_PASSWORD:root}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:3306/meego_connector?serverTimezone=Asia/Shanghai&characterEncoding=utf8&useUnicode=true&useSSL=false
+    username: root
+    password: root
