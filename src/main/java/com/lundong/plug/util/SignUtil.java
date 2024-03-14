@@ -11,7 +11,9 @@ import cn.hutool.http.HttpResponse;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.lundong.plug.config.Constants;
+import com.lundong.plug.entity.ProjectUser;
 import com.lundong.plug.entity.WorkItem;
+import com.lundong.plug.entity.WorkItemField;
 import com.lundong.plug.entity.param.MeegoParam;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ClassPathResource;
@@ -120,7 +122,6 @@ public class SignUtil {
      * @return
      */
     public static List<WorkItem> workItemList(MeegoParam meegoParam) {
-        // todo
         List<WorkItem> workItemList = new ArrayList<>();
         String token = SignUtil.token(meegoParam);
         try {
@@ -171,6 +172,40 @@ public class SignUtil {
             log.error("workItemList方法异常：", e);
         }
         return workItemList;
+    }
+
+    /**
+     * 获取指定的工作项列表(非跨空间)
+     *
+     * @param meegoParam
+     * @return
+     */
+    public static List<WorkItemField> fieldAll(MeegoParam meegoParam) {
+        List<WorkItemField> workItemFieldList = new ArrayList<>();
+        String token = SignUtil.token(meegoParam);
+        try {
+            String resultString = HttpRequest.post(Constants.MEEGO_URL + "/open_api/" + meegoParam.getProjectKey() + Constants.FIELD_ALL)
+                    .header("X-PLUGIN-TOKEN", token)
+                    .header("X-USER-KEY", meegoParam.getUserKey())
+                    .execute().body();
+
+            //            log.info("金蝶组织列表查询参数: {}", paramDetailJson);
+            log.info("fieldAll方法获取空间字段接口: {}", resultString);
+            JSONObject jsonObject = JSONObject.parseObject(resultString);
+            if (jsonObject.getInteger("err_code") == 0) {
+                JSONArray jsonArray = jsonObject.getJSONArray("data");
+                if (jsonArray != null && !ArrUtil.isEmpty(jsonArray)) {
+                    workItemFieldList = JSONArray.parseArray(jsonArray.toJSONString(), WorkItemField.class);
+                    return workItemFieldList;
+                }
+            } else {
+                log.error("fieldAll方法获取空间字段接口: {}", resultString);
+                return Collections.emptyList();
+            }
+        } catch (Exception e) {
+            log.error("fieldAll方法异常：", e);
+        }
+        return workItemFieldList;
     }
 
     public static String genPostRequestSignature(String nonce, String timestamp, String body, String secretKey) {
@@ -230,5 +265,36 @@ public class SignUtil {
             log.error("解密异常：", e);
             return "";
         }
+    }
+
+    public static List<ProjectUser> user(MeegoParam meegoParam, List<String> distinctUserIds) {
+        List<ProjectUser> projectUserList = new ArrayList<>();
+        String token = SignUtil.token(meegoParam);
+        try {
+            JSONObject objectParam = new JSONObject();
+            JSONArray jsonArrayParam = new JSONArray();
+            jsonArrayParam.addAll(distinctUserIds);
+            objectParam.put("user_keys", jsonArrayParam);
+            String resultString = HttpRequest.post(Constants.MEEGO_URL + Constants.USER_QUERY)
+                    .body(objectParam.toJSONString())
+                    .header("X-PLUGIN-TOKEN", token)
+                    .header("X-USER-KEY", meegoParam.getUserKey())
+                    .execute().body();
+            log.info("user方法获取用户详情列表接口: {}", resultString);
+            JSONObject jsonObject = JSONObject.parseObject(resultString);
+            if (jsonObject.getInteger("err_code") == 0) {
+                JSONArray jsonArray = jsonObject.getJSONArray("data");
+                if (jsonArray != null && !ArrUtil.isEmpty(jsonArray)) {
+                    projectUserList = JSONArray.parseArray(jsonArray.toJSONString(), ProjectUser.class);
+                    return projectUserList;
+                }
+            } else {
+                log.error("user方法获取用户详情列表接口出错: {}", resultString);
+                return Collections.emptyList();
+            }
+        } catch (Exception e) {
+            log.error("user方法异常：", e);
+        }
+        return projectUserList;
     }
 }

@@ -10,6 +10,7 @@ import cn.hutool.crypto.digest.DigestUtil;
 import cn.hutool.crypto.symmetric.AES;
 import cn.hutool.crypto.symmetric.DES;
 import com.lundong.plug.config.Constants;
+import com.lundong.plug.entity.ProjectUser;
 import com.lundong.plug.entity.param.MeegoParam;
 import com.lundong.plug.service.MeegoService;
 import com.lundong.plug.service.TenantAuthService;
@@ -23,6 +24,8 @@ import org.springframework.util.StreamUtils;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author shuangquan.chen
@@ -120,5 +123,26 @@ public class AppTest {
         System.out.println("加密结果：" + result);
 
         System.out.println(SignUtil.rsaDecrypt(result));
+    }
+
+    @Test
+    void test12() {
+        MeegoParam meegoParam = new MeegoParam();
+        meegoParam.setPluginId("xx");
+        meegoParam.setPluginSecret("xx");
+        meegoParam.setUserKey("xx");
+        meegoParam.setProjectKey("xx");
+
+//        List<WorkItemField> workItemFields = SignUtil.fieldAll(meegoParam);
+//        for (WorkItemField workItemField : workItemFields) {
+//            System.out.println(workItemField);
+//        }
+
+        ArrayList<String> strings = new ArrayList<>();
+        strings.add("7313814606542061572");
+        List<ProjectUser> projectUsers = SignUtil.user(meegoParam, strings);
+        for (ProjectUser projectUser : projectUsers) {
+            System.out.println(projectUser);
+        }
     }
 }

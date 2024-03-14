@@ -27,6 +27,9 @@ public class Field {
     @Alias("isPrimary")
     private Boolean isPrimary;
 
+    @Alias("field_key")
+    private String fieldKey;
+
     @Alias("property")
     private Property property;
 }

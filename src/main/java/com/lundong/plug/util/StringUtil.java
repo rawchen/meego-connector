@@ -3,6 +3,8 @@ package com.lundong.plug.util;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.lundong.plug.config.Constants;
+import com.lundong.plug.entity.ProjectUser;
 import com.lundong.plug.entity.WorkItemField;
 import lombok.extern.slf4j.Slf4j;
 
@@ -141,5 +143,197 @@ public class StringUtil {
         }
         long milliseconds = operateTime.atZone(ZoneOffset.systemDefault()).toInstant().toEpochMilli();
         return String.valueOf(milliseconds);
+    }
+
+    public static Integer coventFieldType(String fieldTypeKey) {
+        switch (fieldTypeKey) {
+            case "text":
+            case "link":
+            case "work_item_related_select":
+            case "user":
+            case "multi_user":
+            case "multi_text":
+            case "business":
+            case "chat_group":
+            case "group_id":
+            case "group_type":
+            case "schedule":
+            case "work_item_related_multi_select":
+            case "file":
+            case "linked_work_item":
+            case "owned_project":
+            case "multi_file":
+            case "_work_item_role":
+            case "sub_stage":
+            case "template_type":
+                return Constants.biTableText;
+            case "date":
+                // 毫秒级别时间戳
+                return Constants.biTableDate;
+            case "number":
+            case "work_item_template":
+                return Constants.biTableNum;
+            case "signal":
+            case "bool":
+            case "deleted":
+            case "aborted":
+                return Constants.biTableCheckBox;
+            case "radio":
+            case "select":
+            case "work_item_status":
+                return Constants.biTableSingleSelect;
+            case "multi_select":
+            case "role_owners":
+                return Constants.biTableMultipleSelect;
+            default:
+                log.error("无该类型字段与之匹配，请检查：{}", fieldTypeKey);
+                return 0;
+        }
+
+    }
+
+    public static Long dealTimestamp(Long timestamp) {
+        if (timestamp == null || timestamp == 0) {
+            return null;
+        } else {
+            return timestamp;
+        }
+    }
+
+    public static Object dealField(WorkItemField field) {
+        if (field == null) {
+            return null;
+        } else {
+            switch (field.getFieldTypeKey()) {
+                case "text":
+                case "link":
+                    return field.getFieldValue();
+                case "date":
+                    // 毫秒级别时间戳
+                    if (field.getFieldValue() == null || field.getFieldValue() == "0") {
+                        return null;
+                    }
+                    return Long.valueOf(field.getFieldValue());
+                case "schedule":
+                    JSONObject object = JSONObject.parseObject(field.getFieldValue());
+                    Long startTime = object.getLong("start_time");
+                    Long endTime = object.getLong("end_time");
+                    String startTimeStr = timestampToYearMonthDayHourMinuteSecond(startTime, "yyyy/MM/dd HH:mm:ss");
+                    String endTimeStr = timestampToYearMonthDayHourMinuteSecond(endTime, "yyyy/MM/dd HH:mm:ss");
+                    return startTimeStr + "-" + endTimeStr;
+                case "number":
+                    return Double.valueOf(field.getFieldValue());
+                case "work_item_related_select":
+                    // 关联工作项
+                    return field.getFieldValue();
+                case "work_item_related_multi_select":
+                    return JSONArray.parseArray(field.getFieldValue(), String.class).stream()
+                            .map(Object::toString)
+                            .collect(Collectors.joining(","));
+                case "signal":
+                case "bool":
+                case "deleted":
+                    return Boolean.valueOf(field.getFieldValue());
+                case "radio":
+                case "select":
+                    JSONObject radioObject = JSONObject.parseObject(field.getFieldValue());
+                    return radioObject.getString("label");
+                case "multi_select":
+                    JSONArray jsonArray = JSONArray.parseArray(field.getFieldValue());
+                    List<String> multiSelectList = jsonArray.stream().map(o -> (JSONObject) o)
+                            .map(o -> o.getString("value"))
+                            .collect(Collectors.toList());
+                    return multiSelectList;
+                case "user":
+                    return field.getFieldValue();
+                case "multi_user":
+                    if (field.getFieldValue() == null) {
+                        return Collections.emptyList();
+                    }
+                    List<String> stringList = JSONArray.parseArray(field.getFieldValue()).toJavaList(String.class);
+                    return stringList;
+//                    if (field.getFieldValue() == null) {
+//                        return "";
+//                    }
+//                    return String.join(",", JSONArray.parseArray(field.getFieldValue(), String.class));
+                case "multi_text":
+                    return field.getFieldValue();
+                case "file":
+                    JSONObject fileObject = JSONObject.parseObject(field.getFieldValue());
+                    return fileObject.getString("name");
+                case "aborted":
+                    JSONObject abortedObject = JSONObject.parseObject(field.getFieldValue());
+                    return abortedObject.getBoolean("is_aborted");
+                case "linked_work_item":
+                    JSONObject linkedWorkItemObject = JSONObject.parseObject(field.getFieldValue());
+                    return linkedWorkItemObject.getString("name");
+                case "business":
+                case "chat_group":
+                case "group_id":
+                case "group_type":
+                    return field.getFieldValue();
+                case "work_item_template":
+                    JSONObject workItemTemplateObject = JSONObject.parseObject(field.getFieldValue());
+                    return workItemTemplateObject.getInteger("id");
+                case "role_owners":
+                    if (field.getFieldValue() == null) {
+                        return Collections.emptyList();
+                    }
+                    JSONArray roleOwnersJsonArray = JSONArray.parseArray(field.getFieldValue());
+                    List<String> roleOwnersMultiSelectList = roleOwnersJsonArray.stream().map(o -> (JSONObject) o)
+                            .map(o -> o.getString("role"))
+                            .collect(Collectors.toList());
+                    return roleOwnersMultiSelectList;
+                case "multi_file":
+                    if (field.getFieldValue() == null) {
+                        return Collections.emptyList();
+                    }
+                    JSONArray multiFileJsonArray = JSONArray.parseArray(field.getFieldValue());
+                    List<String> multiFileList = multiFileJsonArray.stream().map(o -> (JSONObject) o)
+                            .map(o -> o.getString("url"))
+                            .collect(Collectors.toList());
+                    return String.join(",", multiFileList);
+            }
+        }
+        return null;
+    }
+
+    public static Object dealUserName(List<ProjectUser> projectUsers, String s) {
+        if (StrUtil.isEmpty(s)) {
+            return null;
+        } else {
+            List<ProjectUser> collect = projectUsers.stream().filter(u -> s.equals(u.getUserKey())).collect(Collectors.toList());
+            if (collect.size() != 1) {
+                log.error("匹配数量不唯一：{}", collect);
+                return s;
+            } else {
+                return collect.get(0).getNameCn();
+            }
+        }
+    }
+
+    public static Object dealUserNameMulti(List<ProjectUser> projectUsers, String fieldValue) {
+        try {
+            if (StrUtil.isEmpty(fieldValue)) {
+                return null;
+            }
+            JSONArray jsonArray = JSONArray.parseArray(fieldValue);
+            if (ArrUtil.isEmpty(jsonArray)) {
+                return null;
+            }
+            List<String> javaList = jsonArray.toJavaList(String.class);
+            if (ArrUtil.isEmpty(javaList)) {
+                return null;
+            }
+            List<ProjectUser> collect = projectUsers.stream().filter(u -> javaList.contains(u.getUserKey())).collect(Collectors.toList());
+            if (ArrUtil.isEmpty(collect)) {
+                return null;
+            }
+            List<String> stringList = collect.stream().map(ProjectUser::getNameCn).collect(Collectors.toList());
+            return String.join(",", stringList);
+        } catch (Exception e) {
+            log.error("dealUserNameMulti方法异常：", e);
+            return null;
+        }
     }
 }

@@ -35,6 +35,27 @@ public class WorkItem {
     @JSONField(name = "updated_by")
     private String updatedBy;
 
+    @JSONField(name = "deleted_by")
+    private String deletedBy;
+
+    @JSONField(name = "created_at")
+    private Long createdAt;
+
+    @JSONField(name = "updated_at")
+    private Long updatedAt;
+
+    @JSONField(name = "deleted_at")
+    private Long deletedAt;
+
+    @JSONField(name = "template_id")
+    private Long templateId;
+
+    @JSONField(name = "template_type")
+    private String templateType;
+
+    @JSONField(name = "work_item_type_key")
+    private String workItemTypeKey;
+
     @JSONField(name = "fields")
     List<WorkItemField> workItemFields;
 

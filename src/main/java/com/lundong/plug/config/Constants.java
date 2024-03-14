@@ -29,4 +29,7 @@ public class Constants {
 
     public static final String WORK_ITEM_FILTER = "/work_item/filter";
 
+    public static final String FIELD_ALL = "/field/all";
+
+    public static final String USER_QUERY = "/open_api/user/query";
 }
