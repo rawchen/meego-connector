@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -71,6 +72,9 @@ public class StringUtil {
                 case "user":
                     return field.getFieldValue();
                 case "multi_user":
+                    if (field.getFieldValue() == null) {
+                        return Collections.emptyList();
+                    }
                     List<String> stringList = JSONArray.parseArray(field.getFieldValue()).toJavaList(String.class);
                     return stringList;
 //                    if (field.getFieldValue() == null) {
@@ -97,6 +101,9 @@ public class StringUtil {
                     JSONObject workItemTemplateObject = JSONObject.parseObject(field.getFieldValue());
                     return workItemTemplateObject.getInteger("id");
                 case "role_owners":
+                    if (field.getFieldValue() == null) {
+                        return Collections.emptyList();
+                    }
                     JSONArray roleOwnersJsonArray = JSONArray.parseArray(field.getFieldValue());
                     List<String> roleOwnersMultiSelectList = roleOwnersJsonArray.stream().map(o -> (JSONObject) o)
                             .map(o -> o.getString("role"))

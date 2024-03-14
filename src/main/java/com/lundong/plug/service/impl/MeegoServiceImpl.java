@@ -83,7 +83,7 @@ public class MeegoServiceImpl implements MeegoService {
                         }
                     }
                 }
-                stockfields.add(new Field().setFieldName(resp.getTableName() + "ID").setFieldId("id1").setFieldType(Constants.biTableNum).setIsPrimary(true).setDescription(""));
+                stockfields.add(new Field().setFieldName(resp.getTableName() + "ID").setFieldId("id1").setFieldType(Constants.biTableNum).setIsPrimary(true).setDescription("").setProperty(new Property().setFormatter("0")));
                 stockfields.add(new Field().setFieldName(resp.getTableName() + "名称").setFieldId("id2").setFieldType(Constants.biTableText).setIsPrimary(false).setDescription(""));
                 stockfields.add(new Field().setFieldName("所属空间").setFieldId("id3").setFieldType(Constants.biTableText).setIsPrimary(false).setDescription(""));
                 stockfields.add(new Field().setFieldName("当前状态").setFieldId("id4").setFieldType(Constants.biTableSingleSelect).setIsPrimary(false).setDescription(""));
@@ -93,7 +93,7 @@ public class MeegoServiceImpl implements MeegoService {
                 stockfields.add(new Field().setFieldName("状态key").setFieldId("id8").setFieldType(Constants.biTableText).setIsPrimary(false).setDescription(""));
                 stockfields.add(new Field().setFieldName("是否初始状态").setFieldId("id9").setFieldType(Constants.biTableCheckBox).setIsPrimary(false).setDescription(""));
 
-                stockfields.add(new Field().setFieldName("模版").setFieldId("id10").setFieldType(Constants.biTableNum).setIsPrimary(false).setDescription(""));
+                stockfields.add(new Field().setFieldName("模版").setFieldId("id10").setFieldType(Constants.biTableNum).setIsPrimary(false).setDescription("").setProperty(new Property().setFormatter("0")));
                 stockfields.add(new Field().setFieldName("终止").setFieldId("id11").setFieldType(Constants.biTableCheckBox).setIsPrimary(false).setDescription(""));
                 stockfields.add(new Field().setFieldName("删除").setFieldId("id12").setFieldType(Constants.biTableCheckBox).setIsPrimary(false).setDescription(""));
                 stockfields.add(new Field().setFieldName("描述").setFieldId("id13").setFieldType(Constants.biTableText).setIsPrimary(false).setDescription(""));
