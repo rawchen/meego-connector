@@ -287,6 +287,9 @@ public class StringUtil {
     }
 
     public static Object dealUserName(List<ProjectUser> projectUsers, String s) {
+        if (ArrUtil.isEmpty(projectUsers)) {
+            return s;
+        }
         if (StrUtil.isEmpty(s)) {
             return null;
         } else {

@@ -274,6 +274,9 @@ public class SignUtil {
             JSONObject objectParam = new JSONObject();
             JSONArray jsonArrayParam = new JSONArray();
             jsonArrayParam.addAll(distinctUserIds);
+            if (ArrUtil.isEmpty(distinctUserIds)) {
+                return Collections.emptyList();
+            }
             objectParam.put("user_keys", jsonArrayParam);
             String resultString = HttpRequest.post(Constants.MEEGO_URL + Constants.USER_QUERY)
                     .body(objectParam.toJSONString())
