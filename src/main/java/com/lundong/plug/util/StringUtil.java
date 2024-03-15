@@ -185,6 +185,9 @@ public class StringUtil {
             case "multi_select":
             case "role_owners":
                 return Constants.biTableMultipleSelect;
+            case "compound_field":
+            case "vote_boolean":
+                return -1;
             default:
                 log.error("无该类型字段与之匹配，请检查：{}", fieldTypeKey);
                 return 0;
@@ -204,13 +207,28 @@ public class StringUtil {
         if (field == null) {
             return null;
         } else {
+            if (field.getFieldValue() == null) {
+                return null;
+            }
             switch (field.getFieldTypeKey()) {
                 case "text":
                 case "link":
+                case "work_item_related_select":
+                case "user":
+//                    if (field.getFieldValue() == null) {
+//                        return "";
+//                    }
+//                    return String.join(",", JSONArray.parseArray(field.getFieldValue(), String.class));
+                case "multi_text":
+                case "business":
+                case "chat_group":
+                case "group_id":
+                case "group_type":
+                    // 关联工作项
                     return field.getFieldValue();
                 case "date":
                     // 毫秒级别时间戳
-                    if (field.getFieldValue() == null || field.getFieldValue() == "0") {
+                    if (field.getFieldValue() == "0") {
                         return null;
                     }
                     return Long.valueOf(field.getFieldValue());
@@ -223,9 +241,6 @@ public class StringUtil {
                     return startTimeStr + "-" + endTimeStr;
                 case "number":
                     return Double.valueOf(field.getFieldValue());
-                case "work_item_related_select":
-                    // 关联工作项
-                    return field.getFieldValue();
                 case "work_item_related_multi_select":
                     return JSONArray.parseArray(field.getFieldValue(), String.class).stream()
                             .map(Object::toString)
@@ -240,54 +255,27 @@ public class StringUtil {
                     return radioObject.getString("label");
                 case "multi_select":
                     JSONArray jsonArray = JSONArray.parseArray(field.getFieldValue());
-                    List<String> multiSelectList = jsonArray.stream().map(o -> (JSONObject) o)
-                            .map(o -> o.getString("value"))
+                    return jsonArray.stream().map(o1 -> (JSONObject) o1)
+                            .map(o1 -> o1.getString("value"))
                             .collect(Collectors.toList());
-                    return multiSelectList;
-                case "user":
-                    return field.getFieldValue();
                 case "multi_user":
-                    if (field.getFieldValue() == null) {
-                        return Collections.emptyList();
-                    }
-                    List<String> stringList = JSONArray.parseArray(field.getFieldValue()).toJavaList(String.class);
-                    return stringList;
-//                    if (field.getFieldValue() == null) {
-//                        return "";
-//                    }
-//                    return String.join(",", JSONArray.parseArray(field.getFieldValue(), String.class));
-                case "multi_text":
-                    return field.getFieldValue();
+                    return JSONArray.parseArray(field.getFieldValue()).toJavaList(String.class);
                 case "file":
+                case "linked_work_item":
                     JSONObject fileObject = JSONObject.parseObject(field.getFieldValue());
                     return fileObject.getString("name");
                 case "aborted":
                     JSONObject abortedObject = JSONObject.parseObject(field.getFieldValue());
                     return abortedObject.getBoolean("is_aborted");
-                case "linked_work_item":
-                    JSONObject linkedWorkItemObject = JSONObject.parseObject(field.getFieldValue());
-                    return linkedWorkItemObject.getString("name");
-                case "business":
-                case "chat_group":
-                case "group_id":
-                case "group_type":
-                    return field.getFieldValue();
                 case "work_item_template":
                     JSONObject workItemTemplateObject = JSONObject.parseObject(field.getFieldValue());
                     return workItemTemplateObject.getInteger("id");
                 case "role_owners":
-                    if (field.getFieldValue() == null) {
-                        return Collections.emptyList();
-                    }
                     JSONArray roleOwnersJsonArray = JSONArray.parseArray(field.getFieldValue());
-                    List<String> roleOwnersMultiSelectList = roleOwnersJsonArray.stream().map(o -> (JSONObject) o)
-                            .map(o -> o.getString("role"))
+                    return roleOwnersJsonArray.stream().map(o1 -> (JSONObject) o1)
+                            .map(o1 -> o1.getString("role"))
                             .collect(Collectors.toList());
-                    return roleOwnersMultiSelectList;
                 case "multi_file":
-                    if (field.getFieldValue() == null) {
-                        return Collections.emptyList();
-                    }
                     JSONArray multiFileJsonArray = JSONArray.parseArray(field.getFieldValue());
                     List<String> multiFileList = multiFileJsonArray.stream().map(o -> (JSONObject) o)
                             .map(o -> o.getString("url"))

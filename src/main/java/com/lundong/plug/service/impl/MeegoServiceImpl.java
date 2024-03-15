@@ -102,6 +102,7 @@ public class MeegoServiceImpl implements MeegoService {
                 for (WorkItemField workItemField : collectAll) {
                     stockfields.add(new Field().setFieldName(workItemField.getFieldName()).setFieldType(StringUtil.coventFieldType(workItemField.getFieldTypeKey())).setIsPrimary(false).setDescription(""));
                 }
+                stockfields = stockfields.stream().filter(s -> s.getFieldType() != -1).collect(Collectors.toList());
                 for (int i = 0; i < stockfields.size(); i++) {
                     if (i == 0) {
                         continue;
@@ -144,16 +145,17 @@ public class MeegoServiceImpl implements MeegoService {
                 List<Record> stockRecords = new ArrayList<>();
                 List<SpaceEntity> spaceList = spaceList(req);
                 List<Field> stockfields = new ArrayList<>();
-                stockfields.add(new Field().setFieldId("id1").setFieldKey("id"));
+                stockfields.add(new Field().setFieldId("id1").setFieldKey("id").setFieldType(Constants.biTableNum));
                 List<WorkItemField> workItemFields = SignUtil.fieldAll(meegoParam);
                 List<WorkItemField> collectSomeOne = workItemFields.stream().filter(a -> a.getWorkItemScopes().contains(meegoParam.getTypeKey())).collect(Collectors.toList());
                 for (WorkItemField workItemField : collectSomeOne) {
-                    stockfields.add(new Field().setFieldKey(workItemField.getFieldKey()).setFieldName(workItemField.getFieldTypeKey()));
+                    stockfields.add(new Field().setFieldKey(workItemField.getFieldKey()).setFieldType(StringUtil.coventFieldType(workItemField.getFieldTypeKey())).setFieldName(workItemField.getFieldTypeKey()));
                 }
                 List<WorkItemField> collectAll = workItemFields.stream().filter(a -> a.getWorkItemScopes().contains("_all")).collect(Collectors.toList());
                 for (WorkItemField workItemField : collectAll) {
-                    stockfields.add(new Field().setFieldKey(workItemField.getFieldKey()).setFieldName(workItemField.getFieldTypeKey()));
+                    stockfields.add(new Field().setFieldKey(workItemField.getFieldKey()).setFieldType(StringUtil.coventFieldType(workItemField.getFieldTypeKey())).setFieldName(workItemField.getFieldTypeKey()));
                 }
+                stockfields = stockfields.stream().filter(s -> s.getFieldType() != -1).collect(Collectors.toList());
                 for (int i = 0; i < stockfields.size(); i++) {
                     if (i == 0) {
                         continue;
@@ -191,7 +193,7 @@ public class MeegoServiceImpl implements MeegoService {
                         } else if ("deleted_at".equals(stockfields.get(j).getFieldKey())) {
                             map.put(stockfields.get(j).getFieldId(), StringUtil.dealTimestamp(workItems.get(i).getDeletedAt()));
                         } else if ("created_by".equals(stockfields.get(j).getFieldKey())) {
-                            System.out.println(workItems.get(i).getCreatedBy());
+//                            System.out.println(workItems.get(i).getCreatedBy());
                             map.put(stockfields.get(j).getFieldId(), StringUtil.dealUserName(projectUsers, workItems.get(i).getCreatedBy()));
                         } else if ("updated_by".equals(stockfields.get(j).getFieldKey())) {
                             map.put(stockfields.get(j).getFieldId(), StringUtil.dealUserName(projectUsers, workItems.get(i).getUpdatedBy()));

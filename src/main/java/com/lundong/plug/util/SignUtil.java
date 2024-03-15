@@ -165,7 +165,7 @@ public class SignUtil {
             // 解析
             for (int i = 0; i < resultArrayNew.size(); i++) {
                 WorkItem workItem = JSONArray.toJavaObject(resultArrayNew.getJSONObject(i), WorkItem.class);
-                System.out.println(workItem);
+//                System.out.println(workItem);
                 workItemList.add(workItem);
             }
         } catch (Exception e) {
