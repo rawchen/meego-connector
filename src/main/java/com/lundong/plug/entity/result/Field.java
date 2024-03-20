@@ -30,6 +30,9 @@ public class Field {
     @Alias("field_key")
     private String fieldKey;
 
+    @Alias("is_role_field")
+    private Boolean isRoleField;
+
     @Alias("property")
     private Property property;
 }

@@ -102,6 +102,10 @@ public class MeegoServiceImpl implements MeegoService {
                 for (WorkItemField workItemField : collectAll) {
                     stockfields.add(new Field().setFieldName(workItemField.getFieldName()).setFieldType(StringUtil.coventFieldType(workItemField.getFieldTypeKey())).setIsPrimary(false).setDescription(""));
                 }
+
+                List<RoleField> roleFields = SignUtil.fieldAllRole(meegoParam);
+                dealRoleFields(roleFields, stockfields);
+
                 stockfields = stockfields.stream().filter(s -> s.getFieldType() != -1).collect(Collectors.toList());
                 for (int i = 0; i < stockfields.size(); i++) {
                     if (i == 0) {
@@ -132,6 +136,7 @@ public class MeegoServiceImpl implements MeegoService {
             lineLimitNumber = tenantAuthService.rowNumberLimit(tenantAuth.getTenantKey());
         } else {
             log.error("根据租户获取不到行数规则");
+            lineLimitNumber = 100000L;
         }
 
         // 1工作项列表 2插件工时 3任务工时
@@ -155,6 +160,10 @@ public class MeegoServiceImpl implements MeegoService {
                 for (WorkItemField workItemField : collectAll) {
                     stockfields.add(new Field().setFieldKey(workItemField.getFieldKey()).setFieldType(StringUtil.coventFieldType(workItemField.getFieldTypeKey())).setFieldName(workItemField.getFieldTypeKey()));
                 }
+
+                List<RoleField> roleFields = SignUtil.fieldAllRole(meegoParam);
+                dealRoleFields(roleFields, stockfields);
+
                 stockfields = stockfields.stream().filter(s -> s.getFieldType() != -1).collect(Collectors.toList());
                 for (int i = 0; i < stockfields.size(); i++) {
                     if (i == 0) {
@@ -172,6 +181,17 @@ public class MeegoServiceImpl implements MeegoService {
                     for (WorkItemField workItemField : workItem.getWorkItemFields()) {
                         if ("user".equals(workItemField.getFieldTypeKey())) {
                             userId.add(workItemField.getFieldValue());
+                        }
+                        if ("role_owners".equals(workItemField.getFieldTypeKey())) {
+                            if (workItemField.getFieldValue() != null) {
+                                JSONArray roleOwnersJsonArray = JSONArray.parseArray(workItemField.getFieldValue());
+                                List<RoleFieldValue> list = roleOwnersJsonArray.toJavaList(RoleFieldValue.class);
+                                for (RoleFieldValue roleFieldValue : list) {
+                                    if (!ArrUtil.isEmpty(roleFieldValue.getOwners())) {
+                                        userId.addAll(roleFieldValue.getOwners());
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -201,10 +221,10 @@ public class MeegoServiceImpl implements MeegoService {
                             map.put(stockfields.get(j).getFieldId(), StringUtil.dealUserName(projectUsers, workItems.get(i).getDeletedBy()));
                         } else if ("name".equals(stockfields.get(j).getFieldKey())) {
                             map.put(stockfields.get(j).getFieldId(), workItems.get(i).getName());
-                        } else if ("work_item_status".equals(stockfields.get(j).getFieldKey())) {
+                        } else if ("work_item_status".equals(stockfields.get(j).getFieldKey()) || "work_item_type_key".equals(stockfields.get(j).getFieldKey())) {
                             out:
                             for (WorkItemField workItemField : workItemFields) {
-                                if (workItemField.getFieldKey().equals("work_item_status")) {
+                                if (workItemField.getFieldKey().equals("work_item_status") || workItemField.getFieldKey().equals("work_item_type_key")) {
                                     List<Option> options = workItemField.getOptions();
                                     for (Option option : options) {
                                         if (option.getValue().equals(workItems.get(i).getWorkItemStatus().getStateKey())) {
@@ -224,9 +244,10 @@ public class MeegoServiceImpl implements MeegoService {
                             }
                         } else if ("template_type".equals(stockfields.get(j).getFieldKey())) {
                             map.put(stockfields.get(j).getFieldId(), workItems.get(i).getTemplateType());
-                        } else if ("work_item_type_key".equals(stockfields.get(j).getFieldKey())) {
-                            map.put(stockfields.get(j).getFieldId(), workItems.get(i).getWorkItemTypeKey());
                         }
+//                        } else if ("work_item_type_key".equals(stockfields.get(j).getFieldKey())) {
+//                            map.put(stockfields.get(j).getFieldId(), workItems.get(i).getWorkItemTypeKey());
+//                        }
                         for (WorkItemField workItemFieldTemp : workItemFieldTemps) {
                             if (stockfields.get(j).getFieldKey().equals(workItemFieldTemp.getFieldKey())) {
                                 if ("user".equals(stockfields.get(j).getFieldName())) {
@@ -235,6 +256,12 @@ public class MeegoServiceImpl implements MeegoService {
                                     map.put(stockfields.get(j).getFieldId(), StringUtil.dealUserNameMulti(projectUsers, workItemFieldTemp.getFieldValue()));
                                 } else {
                                     map.put(stockfields.get(j).getFieldId(), StringUtil.dealField(workItemFieldTemp));
+                                }
+                            }
+                            if ("role_owners".equals(workItemFieldTemp.getFieldKey())) {
+                                List<Field> collect = stockfields.stream().filter(a -> a.getIsRoleField() != null && a.getIsRoleField()).collect(Collectors.toList());
+                                for (Field field : collect) {
+                                    map.put(field.getFieldId(), StringUtil.dealFieldRole(projectUsers, field.getFieldKey(), workItemFieldTemp));
                                 }
                             }
                         }
@@ -287,6 +314,14 @@ public class MeegoServiceImpl implements MeegoService {
                 break;
         }
         return page(recordResp.getRecords(), meegoParam.getPageToken(), meegoParam.getMaxPageSize());
+    }
+
+    private void dealRoleFields(List<RoleField> roleFields, List<Field> stockfields) {
+        if (!ArrUtil.isEmpty(roleFields)) {
+            for (RoleField roleField : roleFields) {
+                stockfields.add(new Field().setIsRoleField(true).setFieldKey(roleField.getId()).setFieldType(Constants.biTableText).setFieldName(roleField.getName()));
+            }
+        }
     }
 
     @Override

@@ -12,6 +12,7 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.lundong.plug.config.Constants;
 import com.lundong.plug.entity.ProjectUser;
+import com.lundong.plug.entity.RoleField;
 import com.lundong.plug.entity.WorkItem;
 import com.lundong.plug.entity.WorkItemField;
 import com.lundong.plug.entity.param.MeegoParam;
@@ -142,7 +143,7 @@ public class SignUtil {
                         .execute().body();
 
                 //            log.info("金蝶组织列表查询参数: {}", paramDetailJson);
-                log.info("workItemList方法获取指定的工作项列表(非跨空间)接口: {}", resultString);
+                log.info("workItemList方法获取指定的工作项列表(非跨空间)接口: {}", StringUtil.subLog(resultString));
                 JSONObject jsonObject = JSONObject.parseObject(resultString);
                 JSONArray resultArray;
                 if (jsonObject.getInteger("err_code") == 0) {
@@ -190,7 +191,7 @@ public class SignUtil {
                     .execute().body();
 
             //            log.info("金蝶组织列表查询参数: {}", paramDetailJson);
-            log.info("fieldAll方法获取空间字段接口: {}", resultString);
+            log.info("fieldAll方法获取空间字段接口: {}", StringUtil.subLog(resultString));
             JSONObject jsonObject = JSONObject.parseObject(resultString);
             if (jsonObject.getInteger("err_code") == 0) {
                 JSONArray jsonArray = jsonObject.getJSONArray("data");
@@ -283,7 +284,7 @@ public class SignUtil {
                     .header("X-PLUGIN-TOKEN", token)
                     .header("X-USER-KEY", meegoParam.getUserKey())
                     .execute().body();
-            log.info("user方法获取用户详情列表接口: {}", resultString);
+            log.info("user方法获取用户详情列表接口: {}", StringUtil.subLog(resultString));
             JSONObject jsonObject = JSONObject.parseObject(resultString);
             if (jsonObject.getInteger("err_code") == 0) {
                 JSONArray jsonArray = jsonObject.getJSONArray("data");
@@ -299,5 +300,31 @@ public class SignUtil {
             log.error("user方法异常：", e);
         }
         return projectUserList;
+    }
+
+    public static List<RoleField> fieldAllRole(MeegoParam meegoParam) {
+        List<RoleField> roleFields = new ArrayList<>();
+        String token = SignUtil.token(meegoParam);
+        try {
+            String resultString = HttpRequest.get(Constants.MEEGO_URL + "/open_api/" + meegoParam.getProjectKey() + "/flow_roles/" + meegoParam.getTypeKey())
+                    .header("X-PLUGIN-TOKEN", token)
+                    .header("X-USER-KEY", meegoParam.getUserKey())
+                    .execute().body();
+            log.info("fieldAllRole方法获取流程角色配置详情列表接口: {}", StringUtil.subLog(resultString));
+            JSONObject jsonObject = JSONObject.parseObject(resultString);
+            if (jsonObject.getInteger("err_code") == 0) {
+                JSONArray jsonArray = jsonObject.getJSONArray("data");
+                if (jsonArray != null && !ArrUtil.isEmpty(jsonArray)) {
+                    roleFields = JSONArray.parseArray(jsonArray.toJSONString(), RoleField.class);
+                    return roleFields;
+                }
+            } else {
+                log.error("fieldAllRole方法获取流程角色配置详情列表接口出错: {}", resultString);
+                return Collections.emptyList();
+            }
+        } catch (Exception e) {
+            log.error("fieldAllRole方法异常：", e);
+        }
+        return roleFields;
     }
 }

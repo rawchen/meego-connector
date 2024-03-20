@@ -5,6 +5,7 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.lundong.plug.config.Constants;
 import com.lundong.plug.entity.ProjectUser;
+import com.lundong.plug.entity.RoleFieldValue;
 import com.lundong.plug.entity.WorkItemField;
 import lombok.extern.slf4j.Slf4j;
 
@@ -13,6 +14,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -55,8 +57,8 @@ public class StringUtil {
                     return field.getFieldValue();
                 case "work_item_related_multi_select":
                     return JSONArray.parseArray(field.getFieldValue(), String.class).stream()
-                        .map(Object::toString)
-                        .collect(Collectors.joining(","));
+                            .map(Object::toString)
+                            .collect(Collectors.joining(","));
                 case "signal":
                 case "bool":
                 case "deleted":
@@ -68,7 +70,7 @@ public class StringUtil {
                 case "multi_select":
                     JSONArray jsonArray = JSONArray.parseArray(field.getFieldValue());
                     List<String> multiSelectList = jsonArray.stream().map(o -> (JSONObject) o)
-                            .map(o -> o.getString("value"))
+                            .map(o -> o.getString("label"))
                             .collect(Collectors.toList());
                     return multiSelectList;
                 case "user":
@@ -256,7 +258,7 @@ public class StringUtil {
                 case "multi_select":
                     JSONArray jsonArray = JSONArray.parseArray(field.getFieldValue());
                     return jsonArray.stream().map(o1 -> (JSONObject) o1)
-                            .map(o1 -> o1.getString("value"))
+                            .map(o1 -> o1.getString("label"))
                             .collect(Collectors.toList());
                 case "multi_user":
                     return JSONArray.parseArray(field.getFieldValue()).toJavaList(String.class);
@@ -271,10 +273,10 @@ public class StringUtil {
                     JSONObject workItemTemplateObject = JSONObject.parseObject(field.getFieldValue());
                     return workItemTemplateObject.getInteger("id");
                 case "role_owners":
-                    JSONArray roleOwnersJsonArray = JSONArray.parseArray(field.getFieldValue());
-                    return roleOwnersJsonArray.stream().map(o1 -> (JSONObject) o1)
-                            .map(o1 -> o1.getString("role"))
-                            .collect(Collectors.toList());
+//                    JSONArray roleOwnersJsonArray = JSONArray.parseArray(field.getFieldValue());
+//                    return roleOwnersJsonArray.stream().map(o1 -> (JSONObject) o1)
+//                            .map(o1 -> o1.getString("role"))
+//                            .collect(Collectors.toList());
                 case "multi_file":
                     JSONArray multiFileJsonArray = JSONArray.parseArray(field.getFieldValue());
                     List<String> multiFileList = multiFileJsonArray.stream().map(o -> (JSONObject) o)
@@ -286,7 +288,7 @@ public class StringUtil {
         return null;
     }
 
-    public static Object dealUserName(List<ProjectUser> projectUsers, String s) {
+    public static String dealUserName(List<ProjectUser> projectUsers, String s) {
         if (ArrUtil.isEmpty(projectUsers)) {
             return s;
         }
@@ -326,5 +328,46 @@ public class StringUtil {
             log.error("dealUserNameMulti方法异常：", e);
             return null;
         }
+    }
+
+    public static String subLog(String resultStr) {
+        return subLog(resultStr, 100);
+    }
+
+    public static String subLog(String resultStr, int number) {
+        if (StrUtil.isEmpty(resultStr)) {
+            return "";
+        }
+        return resultStr.length() > number ? resultStr.substring(0, number) + "..." : resultStr;
+    }
+
+    public static Object dealFieldRole(List<ProjectUser> projectUsers, String fieldId, WorkItemField field) {
+        if (fieldId == null) {
+            return null;
+        }
+        if (field == null) {
+            return null;
+        } else {
+            if (field.getFieldValue() == null) {
+                return null;
+            } else {
+                JSONArray roleOwnersJsonArray = JSONArray.parseArray(field.getFieldValue());
+                List<RoleFieldValue> list = roleOwnersJsonArray.toJavaList(RoleFieldValue.class);
+                for (RoleFieldValue roleFieldValue : list) {
+                    if (fieldId.equals(roleFieldValue.getRole())) {
+                        if (roleFieldValue.getOwners() == null) {
+                            return null;
+                        } else {
+                            List<String> userName = new ArrayList<>();
+                            for (String ownerId : roleFieldValue.getOwners()) {
+                                userName.add(dealUserName(projectUsers, ownerId));
+                            }
+                            return String.join(",", userName);
+                        }
+                    }
+                }
+            }
+        }
+        return null;
     }
 }
