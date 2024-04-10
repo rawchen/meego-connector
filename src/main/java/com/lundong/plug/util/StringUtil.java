@@ -6,6 +6,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.lundong.plug.config.Constants;
 import com.lundong.plug.entity.ProjectUser;
 import com.lundong.plug.entity.RoleFieldValue;
+import com.lundong.plug.entity.TreeSelect;
 import com.lundong.plug.entity.WorkItemField;
 import lombok.extern.slf4j.Slf4j;
 
@@ -183,9 +184,11 @@ public class StringUtil {
             case "radio":
             case "select":
             case "work_item_status":
+            case "tree_select":
                 return Constants.biTableSingleSelect;
             case "multi_select":
             case "role_owners":
+            case "tree_multi_select":
                 return Constants.biTableMultipleSelect;
             case "compound_field":
             case "vote_boolean":
@@ -254,6 +257,9 @@ public class StringUtil {
                 case "radio":
                 case "select":
                     JSONObject radioObject = JSONObject.parseObject(field.getFieldValue());
+                    if (radioObject == null) {
+                        return null;
+                    }
                     return radioObject.getString("label");
                 case "multi_select":
                     JSONArray jsonArray = JSONArray.parseArray(field.getFieldValue());
@@ -283,9 +289,46 @@ public class StringUtil {
                             .map(o -> o.getString("url"))
                             .collect(Collectors.toList());
                     return String.join(",", multiFileList);
+                case "tree_select":
+                    TreeSelect treeSelectObject = JSONObject.parseObject(field.getFieldValue(), TreeSelect.class);
+                    if (treeSelectObject == null) {
+                        return null;
+                    }
+                    String childrenLabel = getChildrenLabel(treeSelectObject);
+                    if (StrUtil.isNotEmpty(childrenLabel)) {
+                        return childrenLabel;
+                    }
+                    return null;
+                case "tree_multi_select":
+                    List<String> result = new ArrayList<>();
+                    List<TreeSelect> treeSelectList = JSONArray.parseArray(field.getFieldValue(), TreeSelect.class);
+                    if (treeSelectList == null || ArrUtil.isEmpty(treeSelectList)) {
+                        return null;
+                    }
+                    for (TreeSelect treeSelect : treeSelectList) {
+                        String childrenLabelMulti = getChildrenLabel(treeSelect);
+                        if (StrUtil.isNotEmpty(childrenLabelMulti)) {
+                            result.add(childrenLabelMulti);
+                        }
+                    }
+                    if (!ArrUtil.isEmpty(result)) {
+                        return result;
+                    }
+                    return null;
             }
         }
         return null;
+    }
+
+    public static String getChildrenLabel(TreeSelect treeSelect) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(treeSelect.getLabel());
+        if (treeSelect.getChildren() != null) {
+            sb.append("/");
+//            sb.append(treeSelect.getChildren().getLabel());
+            sb.append(getChildrenLabel(treeSelect.getChildren()));
+        }
+        return sb.toString();
     }
 
     public static String dealUserName(List<ProjectUser> projectUsers, String s) {
