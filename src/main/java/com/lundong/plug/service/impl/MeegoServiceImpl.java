@@ -267,7 +267,7 @@ public class MeegoServiceImpl implements MeegoService {
                         }
                     }
                     employeeRecord.setData(map);
-                    employeeRecord.setPrimaryID("fid_" + (i + 1));
+                    employeeRecord.setPrimaryID("fid_" + workItems.get(i).getId());
                     stockRecords.add(employeeRecord);
 
                 }

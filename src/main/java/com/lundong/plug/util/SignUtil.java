@@ -302,6 +302,41 @@ public class SignUtil {
         return projectUserList;
     }
 
+    // todo
+    public static List<ProjectUser> project(MeegoParam meegoParam, List<Integer> distinctProjectIds) {
+        List<ProjectUser> projectUserList = new ArrayList<>();
+        String token = SignUtil.token(meegoParam);
+        try {
+            JSONObject objectParam = new JSONObject();
+            JSONArray jsonArrayParam = new JSONArray();
+            jsonArrayParam.addAll(distinctProjectIds);
+            if (ArrUtil.isEmpty(distinctProjectIds)) {
+                return Collections.emptyList();
+            }
+            objectParam.put("work_item_ids", jsonArrayParam);
+            String resultString = HttpRequest.post(Constants.MEEGO_URL + "T")
+                    .body(objectParam.toJSONString())
+                    .header("X-PLUGIN-TOKEN", token)
+                    .header("X-USER-KEY", meegoParam.getUserKey())
+                    .execute().body();
+            log.info("user方法获取用户详情列表接口: {}", StringUtil.subLog(resultString));
+            JSONObject jsonObject = JSONObject.parseObject(resultString);
+            if (jsonObject.getInteger("err_code") == 0) {
+                JSONArray jsonArray = jsonObject.getJSONArray("data");
+                if (jsonArray != null && !ArrUtil.isEmpty(jsonArray)) {
+                    projectUserList = JSONArray.parseArray(jsonArray.toJSONString(), ProjectUser.class);
+                    return projectUserList;
+                }
+            } else {
+                log.error("user方法获取用户详情列表接口出错: {}", resultString);
+                return Collections.emptyList();
+            }
+        } catch (Exception e) {
+            log.error("user方法异常：", e);
+        }
+        return projectUserList;
+    }
+
     public static List<RoleField> fieldAllRole(MeegoParam meegoParam) {
         List<RoleField> roleFields = new ArrayList<>();
         String token = SignUtil.token(meegoParam);
