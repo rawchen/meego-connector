@@ -48,10 +48,4 @@ public class MeegoParam {
     @Alias("TransactionID")
     private String transactionID;
 
-    @Alias("pageToken")
-    private String pageToken;
-
-    @Alias("maxPageSize")
-    private String maxPageSize;
-
 }

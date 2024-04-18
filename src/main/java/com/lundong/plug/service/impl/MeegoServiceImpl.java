@@ -313,7 +313,7 @@ public class MeegoServiceImpl implements MeegoService {
                 recordResp.setRecords(stockRecords);
                 break;
         }
-        return page(recordResp.getRecords(), meegoParam.getPageToken(), meegoParam.getMaxPageSize());
+        return page(recordResp.getRecords(), params.getPageToken(), params.getMaxPageSize());
     }
 
     private void dealRoleFields(List<RoleField> roleFields, List<Field> stockfields) {

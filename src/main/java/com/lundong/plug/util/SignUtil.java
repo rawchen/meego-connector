@@ -1,5 +1,6 @@
 package com.lundong.plug.util;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.CharsetUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.crypto.SecureUtil;
@@ -270,34 +271,35 @@ public class SignUtil {
 
     public static List<ProjectUser> user(MeegoParam meegoParam, List<String> distinctUserIds) {
         List<ProjectUser> projectUserList = new ArrayList<>();
+        if (ArrUtil.isEmpty(distinctUserIds)) {
+            return Collections.emptyList();
+        }
         String token = SignUtil.token(meegoParam);
-        try {
-            JSONObject objectParam = new JSONObject();
-            JSONArray jsonArrayParam = new JSONArray();
-            jsonArrayParam.addAll(distinctUserIds);
-            if (ArrUtil.isEmpty(distinctUserIds)) {
-                return Collections.emptyList();
-            }
-            objectParam.put("user_keys", jsonArrayParam);
-            String resultString = HttpRequest.post(Constants.MEEGO_URL + Constants.USER_QUERY)
-                    .body(objectParam.toJSONString())
-                    .header("X-PLUGIN-TOKEN", token)
-                    .header("X-USER-KEY", meegoParam.getUserKey())
-                    .execute().body();
-            log.info("user方法获取用户详情列表接口: {}", StringUtil.subLog(resultString));
-            JSONObject jsonObject = JSONObject.parseObject(resultString);
-            if (jsonObject.getInteger("err_code") == 0) {
-                JSONArray jsonArray = jsonObject.getJSONArray("data");
-                if (jsonArray != null && !ArrUtil.isEmpty(jsonArray)) {
-                    projectUserList = JSONArray.parseArray(jsonArray.toJSONString(), ProjectUser.class);
-                    return projectUserList;
+        List<List<String>> split = CollUtil.split(distinctUserIds, 10);
+        for (List<String> stringList : split) {
+            try {
+                JSONObject objectParam = new JSONObject();
+                JSONArray jsonArrayParam = new JSONArray();
+                jsonArrayParam.addAll(stringList);
+                objectParam.put("user_keys", jsonArrayParam);
+                String resultString = HttpRequest.post(Constants.MEEGO_URL + Constants.USER_QUERY)
+                        .body(objectParam.toJSONString())
+                        .header("X-PLUGIN-TOKEN", token)
+                        .header("X-USER-KEY", meegoParam.getUserKey())
+                        .execute().body();
+                log.info("user方法获取用户详情列表接口: {}", StringUtil.subLog(resultString));
+                JSONObject jsonObject = JSONObject.parseObject(resultString);
+                if (jsonObject != null && jsonObject.getInteger("err_code") == 0) {
+                    JSONArray jsonArray = jsonObject.getJSONArray("data");
+                    if (jsonArray != null && !ArrUtil.isEmpty(jsonArray)) {
+                        projectUserList.addAll(JSONArray.parseArray(jsonArray.toJSONString(), ProjectUser.class));
+                    }
+                } else {
+                    log.error("user方法获取用户详情列表接口出错: {}", resultString);
                 }
-            } else {
-                log.error("user方法获取用户详情列表接口出错: {}", resultString);
-                return Collections.emptyList();
+            } catch (Exception e) {
+                log.error("user方法异常：", e);
             }
-        } catch (Exception e) {
-            log.error("user方法异常：", e);
         }
         return projectUserList;
     }

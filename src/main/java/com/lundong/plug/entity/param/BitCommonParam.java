@@ -13,4 +13,10 @@ public class BitCommonParam {
     @Alias("datasourceConfig")
     private String datasourceConfig;
 
+    @Alias("pageToken")
+    private String pageToken;
+
+    @Alias("maxPageSize")
+    private String maxPageSize;
+
 }
