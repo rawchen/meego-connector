@@ -172,15 +172,16 @@ public class MeegoServiceImpl implements MeegoService {
                     stockfields.get(i).setFieldId("id" + (i + 1));
                 }
 
-                // 处理所有用户映射
-                List<String> userId = new ArrayList<>();
+                // 处理所有用户映射和关联工作项映射
+                List<String> userIds = new ArrayList<>();
+                List<String> workItemIds = new ArrayList<>();
                 for (WorkItem workItem : workItems) {
-                    userId.add(workItem.getCreatedBy());
-                    userId.add(workItem.getUpdatedBy());
-                    userId.add(workItem.getDeletedBy());
+                    userIds.add(workItem.getCreatedBy());
+                    userIds.add(workItem.getUpdatedBy());
+                    userIds.add(workItem.getDeletedBy());
                     for (WorkItemField workItemField : workItem.getWorkItemFields()) {
                         if ("user".equals(workItemField.getFieldTypeKey())) {
-                            userId.add(workItemField.getFieldValue());
+                            userIds.add(workItemField.getFieldValue());
                         }
                         if ("role_owners".equals(workItemField.getFieldTypeKey())) {
                             if (workItemField.getFieldValue() != null) {
@@ -188,15 +189,27 @@ public class MeegoServiceImpl implements MeegoService {
                                 List<RoleFieldValue> list = roleOwnersJsonArray.toJavaList(RoleFieldValue.class);
                                 for (RoleFieldValue roleFieldValue : list) {
                                     if (!ArrUtil.isEmpty(roleFieldValue.getOwners())) {
-                                        userId.addAll(roleFieldValue.getOwners());
+                                        userIds.addAll(roleFieldValue.getOwners());
                                     }
                                 }
+                            }
+                        } else if ("work_item_related_select".equals(workItemField.getFieldTypeKey())) {
+                            if (StrUtil.isNotEmpty(workItemField.getFieldValue())) {
+                                workItemIds.add(workItemField.getFieldValue());
+                            }
+                        } else if ("work_item_related_multi_select".equals(workItemField.getFieldTypeKey())) {
+                            if (workItemField.getFieldValue() != null) {
+                                workItemIds.addAll(JSONArray.parseArray(workItemField.getFieldValue(), String.class).stream()
+                                        .map(Object::toString)
+                                        .collect(Collectors.toList()));
                             }
                         }
                     }
                 }
-                List<String> distinctUserIds = userId.stream().filter(a -> StrUtil.isNotEmpty(a) && !"0".equals(a)).distinct().collect(Collectors.toList());
+                List<String> distinctUserIds = userIds.stream().filter(a -> StrUtil.isNotEmpty(a) && !"0".equals(a)).distinct().collect(Collectors.toList());
+                List<String> distinctWorkItemIds = workItemIds.stream().distinct().collect(Collectors.toList());
                 List<ProjectUser> projectUsers  = SignUtil.user(meegoParam, distinctUserIds);
+                List<WorkItemTemp> workItemTemps  = SignUtil.workItemTemp(meegoParam, distinctWorkItemIds);
 
                 for (int i = 0; i < workItems.size(); i++) {
                     Record employeeRecord = new Record();
@@ -255,7 +268,13 @@ public class MeegoServiceImpl implements MeegoService {
                                 } else if ("multi_user".equals(stockfields.get(j).getFieldName())) {
                                     map.put(stockfields.get(j).getFieldId(), StringUtil.dealUserNameMulti(projectUsers, workItemFieldTemp.getFieldValue()));
                                 } else {
-                                    map.put(stockfields.get(j).getFieldId(), StringUtil.dealField(workItemFieldTemp));
+                                    if ("work_item_related_select".equals(workItemFieldTemp.getFieldTypeKey())) {
+                                        map.put(stockfields.get(j).getFieldId(), StringUtil.dealWorkItemRelated(workItemTemps, workItemFieldTemp.getFieldValue(), "select"));
+                                    } else if ("work_item_related_multi_select".equals(workItemFieldTemp.getFieldTypeKey())) {
+                                        map.put(stockfields.get(j).getFieldId(), StringUtil.dealWorkItemRelated(workItemTemps, workItemFieldTemp.getFieldValue(), "multi_select"));
+                                    } else {
+                                        map.put(stockfields.get(j).getFieldId(), StringUtil.dealField(workItemFieldTemp));
+                                    }
                                 }
                             }
                             if ("role_owners".equals(workItemFieldTemp.getFieldKey())) {

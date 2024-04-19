@@ -12,10 +12,7 @@ import cn.hutool.http.HttpResponse;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.lundong.plug.config.Constants;
-import com.lundong.plug.entity.ProjectUser;
-import com.lundong.plug.entity.RoleField;
-import com.lundong.plug.entity.WorkItem;
-import com.lundong.plug.entity.WorkItemField;
+import com.lundong.plug.entity.*;
 import com.lundong.plug.entity.param.MeegoParam;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ClassPathResource;
@@ -304,41 +301,6 @@ public class SignUtil {
         return projectUserList;
     }
 
-    // todo
-    public static List<ProjectUser> project(MeegoParam meegoParam, List<Integer> distinctProjectIds) {
-        List<ProjectUser> projectUserList = new ArrayList<>();
-        String token = SignUtil.token(meegoParam);
-        try {
-            JSONObject objectParam = new JSONObject();
-            JSONArray jsonArrayParam = new JSONArray();
-            jsonArrayParam.addAll(distinctProjectIds);
-            if (ArrUtil.isEmpty(distinctProjectIds)) {
-                return Collections.emptyList();
-            }
-            objectParam.put("work_item_ids", jsonArrayParam);
-            String resultString = HttpRequest.post(Constants.MEEGO_URL + "T")
-                    .body(objectParam.toJSONString())
-                    .header("X-PLUGIN-TOKEN", token)
-                    .header("X-USER-KEY", meegoParam.getUserKey())
-                    .execute().body();
-            log.info("user方法获取用户详情列表接口: {}", StringUtil.subLog(resultString));
-            JSONObject jsonObject = JSONObject.parseObject(resultString);
-            if (jsonObject.getInteger("err_code") == 0) {
-                JSONArray jsonArray = jsonObject.getJSONArray("data");
-                if (jsonArray != null && !ArrUtil.isEmpty(jsonArray)) {
-                    projectUserList = JSONArray.parseArray(jsonArray.toJSONString(), ProjectUser.class);
-                    return projectUserList;
-                }
-            } else {
-                log.error("user方法获取用户详情列表接口出错: {}", resultString);
-                return Collections.emptyList();
-            }
-        } catch (Exception e) {
-            log.error("user方法异常：", e);
-        }
-        return projectUserList;
-    }
-
     public static List<RoleField> fieldAllRole(MeegoParam meegoParam) {
         List<RoleField> roleFields = new ArrayList<>();
         String token = SignUtil.token(meegoParam);
@@ -363,5 +325,44 @@ public class SignUtil {
             log.error("fieldAllRole方法异常：", e);
         }
         return roleFields;
+    }
+
+    public static List<WorkItemTemp> workItemTemp(MeegoParam meegoParam, List<String> distinctWorkItemIds) {
+        List<WorkItemTemp> workItemTempList = new ArrayList<>();
+        String token = SignUtil.token(meegoParam);
+        if (ArrUtil.isEmpty(distinctWorkItemIds)) {
+            return Collections.emptyList();
+        }
+        for (String distinctWorkItemId : distinctWorkItemIds) {
+            if (StrUtil.isNotEmpty(distinctWorkItemId)) {
+                try {
+                    JSONObject objectParam = new JSONObject();
+                    objectParam.put("query_type", "workitem");
+                    objectParam.put("query", distinctWorkItemId);
+                    String resultString = HttpRequest.post(Constants.MEEGO_URL + Constants.COMPOSITIVE_SEARCH)
+                            .body(objectParam.toJSONString())
+                            .header("X-PLUGIN-TOKEN", token)
+                            .header("X-USER-KEY", meegoParam.getUserKey())
+                            .execute().body();
+                    log.info("获取指定的工作项列表（全局搜索）接口: {}", StringUtil.subLog(resultString));
+                    JSONObject jsonObject = JSONObject.parseObject(resultString);
+                    if (jsonObject.getInteger("err_code") == 0) {
+                        JSONArray jsonArray = jsonObject.getJSONArray("data");
+                        if (jsonArray != null && !ArrUtil.isEmpty(jsonArray)) {
+                            List<WorkItemTemp> workItemList = JSONArray.parseArray(jsonArray.toJSONString(), WorkItemTemp.class);
+                            if (!ArrUtil.isEmpty(workItemList)) {
+                                workItemTempList.addAll(workItemList);
+                            }
+                        }
+                    } else {
+                        log.error("获取指定的工作项列表（全局搜索）接口出错: {}", resultString);
+                        return Collections.emptyList();
+                    }
+                } catch (Exception e) {
+                    log.error("获取指定的工作项列表（全局搜索）接口异常：", e);
+                }
+            }
+        }
+        return workItemTempList;
     }
 }

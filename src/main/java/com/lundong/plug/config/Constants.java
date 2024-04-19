@@ -32,4 +32,6 @@ public class Constants {
     public static final String FIELD_ALL = "/field/all";
 
     public static final String USER_QUERY = "/open_api/user/query";
+
+    public static final String COMPOSITIVE_SEARCH = "/open_api/compositive_search";
 }

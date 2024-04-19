@@ -1,13 +1,11 @@
 package com.lundong.plug.util;
 
+import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.lundong.plug.config.Constants;
-import com.lundong.plug.entity.ProjectUser;
-import com.lundong.plug.entity.RoleFieldValue;
-import com.lundong.plug.entity.TreeSelect;
-import com.lundong.plug.entity.WorkItemField;
+import com.lundong.plug.entity.*;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Instant;
@@ -152,7 +150,6 @@ public class StringUtil {
         switch (fieldTypeKey) {
             case "text":
             case "link":
-            case "work_item_related_select":
             case "user":
             case "multi_user":
             case "multi_text":
@@ -161,7 +158,6 @@ public class StringUtil {
             case "group_id":
             case "group_type":
             case "schedule":
-            case "work_item_related_multi_select":
             case "file":
             case "linked_work_item":
             case "owned_project":
@@ -185,10 +181,12 @@ public class StringUtil {
             case "select":
             case "work_item_status":
             case "tree_select":
+            case "work_item_related_select":
                 return Constants.biTableSingleSelect;
             case "multi_select":
             case "role_owners":
             case "tree_multi_select":
+            case "work_item_related_multi_select":
                 return Constants.biTableMultipleSelect;
             case "compound_field":
             case "vote_boolean":
@@ -218,7 +216,6 @@ public class StringUtil {
             switch (field.getFieldTypeKey()) {
                 case "text":
                 case "link":
-                case "work_item_related_select":
                 case "user":
 //                    if (field.getFieldValue() == null) {
 //                        return "";
@@ -229,7 +226,6 @@ public class StringUtil {
                 case "chat_group":
                 case "group_id":
                 case "group_type":
-                    // 关联工作项
                     return field.getFieldValue();
                 case "date":
                     // 毫秒级别时间戳
@@ -246,10 +242,6 @@ public class StringUtil {
                     return startTimeStr + "-" + endTimeStr;
                 case "number":
                     return Double.valueOf(field.getFieldValue());
-                case "work_item_related_multi_select":
-                    return JSONArray.parseArray(field.getFieldValue(), String.class).stream()
-                            .map(Object::toString)
-                            .collect(Collectors.joining(","));
                 case "signal":
                 case "bool":
                 case "deleted":
@@ -408,6 +400,52 @@ public class StringUtil {
                             return String.join(",", userName);
                         }
                     }
+                }
+            }
+        }
+        return null;
+    }
+
+    public static Object dealWorkItemRelated(List<WorkItemTemp> workItemTemps, String fieldValue, String select) {
+        if ("select".equals(select)) {
+            if (ArrUtil.isEmpty(workItemTemps)) {
+                return fieldValue;
+            }
+            if (StrUtil.isEmpty(fieldValue)) {
+                return null;
+            } else {
+                List<WorkItemTemp> collect = workItemTemps.stream().filter(u -> fieldValue.equals(u.getId())).collect(Collectors.toList());
+                if (collect.size() != 1) {
+                    log.error("匹配数量不唯一：{}", collect);
+                    return fieldValue;
+                } else {
+                    return collect.get(0).getName();
+                }
+            }
+        } else if ("multi_select".equals(select)) {
+            if (ArrUtil.isEmpty(workItemTemps)) {
+                return Collections.emptyList();
+            }
+            if (StrUtil.isEmpty(fieldValue)) {
+                return null;
+            } else {
+                List<String> names = new ArrayList<>();
+                List<String> collect = JSONArray.parseArray(fieldValue, String.class).stream()
+                        .map(Object::toString)
+                        .collect(Collectors.toList());
+                for (String s : collect) {
+                    List<WorkItemTemp> collectList = workItemTemps.stream().filter(u -> s.equals(u.getId())).collect(Collectors.toList());
+                    if (collectList.size() != 1) {
+                        log.error("匹配数量不唯一：{}", collectList);
+                        names.add(fieldValue);
+                    } else {
+                        names.add(collectList.get(0).getName());
+                    }
+                }
+                if (!ArrayUtil.isEmpty(names)) {
+                    return names;
+                } else {
+                    return null;
                 }
             }
         }
