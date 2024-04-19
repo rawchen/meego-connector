@@ -113,6 +113,7 @@ public class MeegoServiceImpl implements MeegoService {
                     }
                     stockfields.get(i).setFieldId("id" + (i + 1));
                 }
+                stockfields.add(new Field().setFieldName("工作项URL链接").setFieldId("id88888888").setFieldType(Constants.biTableLink).setIsPrimary(false).setDescription("工作项URL链接"));
                 resp.setFields(stockfields);
                 break;
         }
@@ -212,6 +213,10 @@ public class MeegoServiceImpl implements MeegoService {
                 List<WorkItemTemp> workItemTemps  = SignUtil.workItemTemp(meegoParam, distinctWorkItemIds);
 
                 for (int i = 0; i < workItems.size(); i++) {
+
+                    // 定义一个所属空间简单名称待会获取后用于拼接项目跳转链接
+                    String spaceSimpleName = "";
+
                     Record employeeRecord = new Record();
                     Map<String, Object> map = new HashMap<>();
 
@@ -252,6 +257,7 @@ public class MeegoServiceImpl implements MeegoService {
                             for (SpaceEntity spaceEntity : spaceList) {
                                 if (spaceEntity.getProjectKey().equals(projectKey)) {
                                     map.put(stockfields.get(j).getFieldId(), spaceEntity.getName());
+                                    spaceSimpleName = spaceEntity.getSimpleName();
                                     break;
                                 }
                             }
@@ -285,6 +291,12 @@ public class MeegoServiceImpl implements MeegoService {
                             }
                         }
                     }
+
+                    ProjectLinkEntity linkEntity = new ProjectLinkEntity();
+                    String link = "https://project.feishu.cn/" + spaceSimpleName + "/" + meegoParam.getTypeKey() + "/detail/" + workItems.get(i).getId();
+                    linkEntity.setName(link);
+                    linkEntity.setUrl(link);
+                    map.put("id88888888", linkEntity);
                     employeeRecord.setData(map);
                     employeeRecord.setPrimaryID("fid_" + workItems.get(i).getId());
                     stockRecords.add(employeeRecord);
