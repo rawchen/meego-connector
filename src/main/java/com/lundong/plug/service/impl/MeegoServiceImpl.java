@@ -41,12 +41,12 @@ public class MeegoServiceImpl implements MeegoService {
     @Autowired
     TenantAuthService tenantAuthService;
 
-    public List<WorkItem> queryWorkItemList(MeegoParam meegoParam, Long lineLimitNumber) {
-        List<WorkItem> workItems = SignUtil.workItemList(meegoParam);
-        if (workItems.size() >= lineLimitNumber) {
-            workItems = workItems.stream().limit(lineLimitNumber).collect(Collectors.toList());
-        }
-        return workItems;
+    public WorkItemPage queryWorkItemList(MeegoParam meegoParam, Long lineLimitNumber, String pageToken, String maxPageSize) {
+        return SignUtil.workItemList(meegoParam, pageToken, maxPageSize);
+//        if (workItems.size() >= lineLimitNumber) {
+//            workItems = workItems.stream().limit(lineLimitNumber).collect(Collectors.toList());
+//        }
+//        return workItems;
     }
 
     @Override
@@ -69,29 +69,6 @@ public class MeegoServiceImpl implements MeegoService {
                         }
                     }
                 }
-//                stockfields.add(new Field().setFieldName(resp.getTableName() + "名称").setFieldId("id2").setFieldType(Constants.biTableText).setIsPrimary(false).setDescription(""));
-//                stockfields.add(new Field().setFieldName("所属空间").setFieldId("id3").setFieldType(Constants.biTableText).setIsPrimary(false).setDescription(""));
-//                stockfields.add(new Field().setFieldName("当前状态").setFieldId("id4").setFieldType(Constants.biTableSingleSelect).setIsPrimary(false).setDescription(""));
-//                stockfields.add(new Field().setFieldName("创建人user_key").setFieldId("id5").setFieldType(Constants.biTableSingleSelect).setIsPrimary(false).setDescription(""));
-//                stockfields.add(new Field().setFieldName("更新人user_key").setFieldId("id6").setFieldType(Constants.biTableSingleSelect).setIsPrimary(false).setDescription(""));
-//                stockfields.add(new Field().setFieldName("状态是否到达").setFieldId("id7").setFieldType(Constants.biTableCheckBox).setIsPrimary(false).setDescription(""));
-//                stockfields.add(new Field().setFieldName("状态key").setFieldId("id8").setFieldType(Constants.biTableText).setIsPrimary(false).setDescription(""));
-//                stockfields.add(new Field().setFieldName("是否初始状态").setFieldId("id9").setFieldType(Constants.biTableCheckBox).setIsPrimary(false).setDescription(""));
-//
-//                stockfields.add(new Field().setFieldName("模版").setFieldId("id10").setFieldType(Constants.biTableNum).setIsPrimary(false).setDescription("").setProperty(new Property().setFormatter("0")));
-//                stockfields.add(new Field().setFieldName("终止").setFieldId("id11").setFieldType(Constants.biTableCheckBox).setIsPrimary(false).setDescription(""));
-//                stockfields.add(new Field().setFieldName("删除").setFieldId("id12").setFieldType(Constants.biTableCheckBox).setIsPrimary(false).setDescription(""));
-//                stockfields.add(new Field().setFieldName("描述").setFieldId("id13").setFieldType(Constants.biTableText).setIsPrimary(false).setDescription(""));
-//                stockfields.add(new Field().setFieldName("完成状态").setFieldId("id14").setFieldType(Constants.biTableCheckBox).setIsPrimary(false).setDescription(""));
-//                stockfields.add(new Field().setFieldName("分组类型").setFieldId("id15").setFieldType(Constants.biTableText).setIsPrimary(false).setDescription(""));
-//                stockfields.add(new Field().setFieldName("归属").setFieldId("id16").setFieldType(Constants.biTableText).setIsPrimary(false).setDescription(""));
-//                stockfields.add(new Field().setFieldName("优先事项").setFieldId("id17").setFieldType(Constants.biTableSingleSelect).setIsPrimary(false).setDescription(""));
-//                stockfields.add(new Field().setFieldName("角色归属").setFieldId("id18").setFieldType(Constants.biTableMultipleSelect).setIsPrimary(false).setDescription(""));
-//                stockfields.add(new Field().setFieldName("开始时间").setFieldId("id19").setFieldType(Constants.biTableDate).setIsPrimary(false).setDescription(""));
-//                stockfields.add(new Field().setFieldName("标签").setFieldId("id20").setFieldType(Constants.biTableMultipleSelect).setIsPrimary(false).setDescription(""));
-//                stockfields.add(new Field().setFieldName("关注人").setFieldId("id21").setFieldType(Constants.biTableMultipleSelect).setIsPrimary(false).setDescription(""));
-//                stockfields.add(new Field().setFieldName("WIKI").setFieldId("id22").setFieldType(Constants.biTableText).setIsPrimary(false).setDescription(""));
-
                 stockfields.add(new Field().setFieldName(resp.getTableName() + "ID").setFieldId("id1").setFieldType(Constants.biTableNum).setIsPrimary(true).setDescription("").setProperty(new Property().setFormatter("0")));
                 List<WorkItemField> workItemFields = SignUtil.fieldAll(meegoParam);
                 List<WorkItemField> collectSomeOne = workItemFields.stream().filter(a -> a.getWorkItemScopes().contains(meegoParam.getTypeKey())).collect(Collectors.toList());
@@ -147,7 +124,9 @@ public class MeegoServiceImpl implements MeegoService {
         switch (FormTypeEnum.toType(formType)) {
             case WORK_ITEM:
                 // 封装字段和文本
-                List<WorkItem> workItems = queryWorkItemList(meegoParam, lineLimitNumber);
+                WorkItemPage workItemPage = queryWorkItemList(meegoParam, lineLimitNumber, params.getPageToken(), params.getMaxPageSize());
+                List<WorkItem> workItems = workItemPage.getWorkItemList();
+                log.info("workItems size: {}", workItems.size());
                 List<Record> stockRecords = new ArrayList<>();
                 List<SpaceEntity> spaceList = spaceList(req);
                 List<Field> stockfields = new ArrayList<>();
@@ -210,6 +189,7 @@ public class MeegoServiceImpl implements MeegoService {
                 List<String> distinctUserIds = userIds.stream().filter(a -> StrUtil.isNotEmpty(a) && !"0".equals(a)).distinct().collect(Collectors.toList());
                 List<String> distinctWorkItemIds = workItemIds.stream().distinct().collect(Collectors.toList());
                 List<ProjectUser> projectUsers  = SignUtil.user(meegoParam, distinctUserIds);
+                log.info("需要转换的itemIds：{}", distinctWorkItemIds.size());
                 List<WorkItemTemp> workItemTemps  = SignUtil.workItemTemp(meegoParam, distinctWorkItemIds);
 
                 for (int i = 0; i < workItems.size(); i++) {
@@ -315,49 +295,14 @@ public class MeegoServiceImpl implements MeegoService {
                     stockRecords.add(employeeRecord);
 
                 }
-
-
-
-//                for (int i = 0; i < workItems.size(); i++) {
-//                    Record employeeRecord = new Record();
-//                    Map<String, Object> map = new HashMap<>();
-//                    map.put("id3", "");
-//                    String projectKey = workItems.get(i).getProjectKey();
-//                    for (SpaceEntity spaceEntity : spaceList) {
-//                        if (spaceEntity.getProjectKey().equals(projectKey)) {
-//                            map.put("id3", spaceEntity.getName());
-//                            break;
-//                        }
-//                    }
-//                    map.put("id1", workItems.get(i).getId());
-//                    map.put("id2", workItems.get(i).getName());
-//                    map.put("id4", workItems.get(i).getSubStage());
-//                    map.put("id5", workItems.get(i).getCreatedBy());
-//                    map.put("id6", workItems.get(i).getUpdatedBy());
-//                    map.put("id7", workItems.get(i).getWorkItemStatus().getIsArchivedState());
-//                    map.put("id8", workItems.get(i).getWorkItemStatus().getStateKey());
-//                    map.put("id9", workItems.get(i).getWorkItemStatus().getIsInitState());
-//                    map.put("id10", StringUtil.dealField(workItems.get(i).getWorkItemFields(), "template"));
-//                    map.put("id11", StringUtil.dealField(workItems.get(i).getWorkItemFields(), "aborted"));
-//                    map.put("id12", StringUtil.dealField(workItems.get(i).getWorkItemFields(), "deleted"));
-//                    map.put("id13", StringUtil.dealField(workItems.get(i).getWorkItemFields(), "description"));
-//                    map.put("id14", StringUtil.dealField(workItems.get(i).getWorkItemFields(), "finish_status"));
-//                    map.put("id15", StringUtil.dealField(workItems.get(i).getWorkItemFields(), "group_type"));
-//                    map.put("id16", StringUtil.dealField(workItems.get(i).getWorkItemFields(), "owner"));
-//                    map.put("id17", StringUtil.dealField(workItems.get(i).getWorkItemFields(), "priority"));
-//                    map.put("id18", StringUtil.dealField(workItems.get(i).getWorkItemFields(), "role_owners"));
-//                    map.put("id19", StringUtil.dealField(workItems.get(i).getWorkItemFields(), "start_time"));
-//                    map.put("id20", StringUtil.dealField(workItems.get(i).getWorkItemFields(), "tags"));
-//                    map.put("id21", StringUtil.dealField(workItems.get(i).getWorkItemFields(), "watchers"));
-//                    map.put("id22", StringUtil.dealField(workItems.get(i).getWorkItemFields(), "wiki"));
-//                    employeeRecord.setData(map);
-//                    employeeRecord.setPrimaryID("fid_" + (i + 1));
-//                    stockRecords.add(employeeRecord);
-//                }
                 recordResp.setRecords(stockRecords);
+                recordResp.setNextPageToken(workItemPage.getNextPageToken());
+                recordResp.setHasMore(workItemPage.getHasMore());
                 break;
         }
-        return page(recordResp.getRecords(), params.getPageToken(), params.getMaxPageSize());
+
+        return recordResp;
+//        return page(recordResp.getRecords(), params.getPageToken(), params.getMaxPageSize());
     }
 
     private void dealRoleFields(List<RoleField> roleFields, List<Field> stockfields) {
@@ -478,8 +423,8 @@ public class MeegoServiceImpl implements MeegoService {
     public RecordResp page(List<Record> records, String pageToken, String maxPageSizeStr) {
         int maxPageSize;
         int currentPage;
-        if (StrUtil.isEmpty(maxPageSizeStr)) {
-            maxPageSize = 1000;
+        if (StrUtil.isEmpty(maxPageSizeStr) || "1000".equals(maxPageSizeStr)) {
+            maxPageSize = 200;
         } else {
             maxPageSize = Integer.valueOf(maxPageSizeStr);
         }

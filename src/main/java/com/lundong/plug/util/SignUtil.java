@@ -120,18 +120,32 @@ public class SignUtil {
      * @param meegoParam
      * @return
      */
-    public static List<WorkItem> workItemList(MeegoParam meegoParam) {
+    // 第1 每页200    0-200   循环4次 pagenum=1 2 3 4
+    // 第2 每页200    200-400 循环4次 pagenum=5 6 7 8
+    public static WorkItemPage workItemList(MeegoParam meegoParam, String pageToken, String maxPageSize) {
+        WorkItemPage workItemPage = new WorkItemPage();
+        workItemPage.setHasMore(true);
+        if (StrUtil.isEmpty(pageToken)) {
+            pageToken = "1";
+        }
+        if (StrUtil.isEmpty(maxPageSize) || "1000".equals(maxPageSize)) {
+            maxPageSize = "200";
+        }
+        int count = ((Integer.parseInt(pageToken) - 1) * Integer.parseInt(maxPageSize)) / 50;
+        int countFor = (Integer.parseInt(maxPageSize)) / 50;
         List<WorkItem> workItemList = new ArrayList<>();
         String token = SignUtil.token(meegoParam);
         try {
-            boolean haseMore = true;
+//            boolean haseMore = true;
             JSONArray resultArrayNew = new JSONArray();
-            int pageNumber = 1;
-            while (haseMore) {
+//            int pageNumber = 1;
+
+            for (int i = 0; i < countFor; i++) {
+                int limitSize = count + (i + 1);
                 String paramDetailJson = "{\n" +
                         "    \"work_item_type_keys\": [\"" + meegoParam.getTypeKey() + "\"],\n" +
                         "    \"page_size\": 50,\n" +
-                        "    \"page_num\": " + pageNumber + "\n" +
+                        "    \"page_num\": " + limitSize + "\n" +
                         "}";
 
                 String resultString = HttpRequest.post(Constants.MEEGO_URL + "/open_api/" + meegoParam.getProjectKey() + Constants.WORK_ITEM_FILTER)
@@ -143,22 +157,20 @@ public class SignUtil {
                 //            log.info("金蝶组织列表查询参数: {}", paramDetailJson);
                 log.info("workItemList方法获取指定的工作项列表(非跨空间)接口: {}", StringUtil.subLog(resultString));
                 JSONObject jsonObject = JSONObject.parseObject(resultString);
-                JSONArray resultArray;
+                JSONArray resultArray = null;
                 if (jsonObject.getInteger("err_code") == 0) {
                     if (jsonObject.getJSONArray("data") != null && !ArrUtil.isEmpty(jsonObject.getJSONArray("data"))) {
                         resultArray = jsonObject.getJSONArray("data");
                     } else {
-                        haseMore = false;
-                        resultArray = new JSONArray();
+                        workItemPage.setHasMore(false);
+                        break;
                     }
                 } else {
                     log.error("workItemList方法获取指定的工作项列表(非跨空间)接口: {}", resultString);
-                    return Collections.emptyList();
                 }
                 if (resultArray != null && !resultArray.isEmpty()) {
                     resultArrayNew.addAll(resultArray);
                 }
-                pageNumber++;
             }
 
             // 解析
@@ -170,7 +182,9 @@ public class SignUtil {
         } catch (Exception e) {
             log.error("workItemList方法异常：", e);
         }
-        return workItemList;
+        workItemPage.setWorkItemList(workItemList);
+        workItemPage.setNextPageToken(String.valueOf(Integer.parseInt(pageToken) + 1));
+        return workItemPage;
     }
 
     /**
