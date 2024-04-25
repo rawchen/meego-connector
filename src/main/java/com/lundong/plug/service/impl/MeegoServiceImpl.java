@@ -239,13 +239,26 @@ public class MeegoServiceImpl implements MeegoService {
                             map.put(stockfields.get(j).getFieldId(), StringUtil.dealUserName(projectUsers, workItems.get(i).getDeletedBy()));
                         } else if ("name".equals(stockfields.get(j).getFieldKey())) {
                             map.put(stockfields.get(j).getFieldId(), workItems.get(i).getName());
-                        } else if ("work_item_status".equals(stockfields.get(j).getFieldKey()) || "work_item_type_key".equals(stockfields.get(j).getFieldKey())) {
+                        } else if ("work_item_status".equals(stockfields.get(j).getFieldKey())) {
                             out:
                             for (WorkItemField workItemField : workItemFields) {
                                 if (workItemField.getFieldKey().equals("work_item_status") || workItemField.getFieldKey().equals("work_item_type_key")) {
                                     List<Option> options = workItemField.getOptions();
                                     for (Option option : options) {
                                         if (option.getValue().equals(workItems.get(i).getWorkItemStatus().getStateKey())) {
+                                            map.put(stockfields.get(j).getFieldId(), option.getLabel());
+                                            break out;
+                                        }
+                                    }
+                                }
+                            }
+                        } else if ("work_item_type_key".equals(stockfields.get(j).getFieldKey())) {
+                            out:
+                            for (WorkItemField workItemField : workItemFields) {
+                                if (workItemField.getFieldKey().equals("work_item_type_key")) {
+                                    List<Option> options = workItemField.getOptions();
+                                    for (Option option : options) {
+                                        if (option.getValue().equals(meegoParam.getTypeKey())) {
                                             map.put(stockfields.get(j).getFieldId(), option.getLabel());
                                             break out;
                                         }
