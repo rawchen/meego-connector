@@ -69,27 +69,21 @@ public class MeegoServiceImpl implements MeegoService {
                         }
                     }
                 }
-                stockfields.add(new Field().setFieldName(resp.getTableName() + "ID").setFieldId("id1").setFieldType(Constants.biTableNum).setIsPrimary(true).setDescription("").setProperty(new Property().setFormatter("0")));
+                stockfields.add(new Field().setFieldName(resp.getTableName() + "ID").setFieldId("field_000001").setFieldType(Constants.biTableNum).setIsPrimary(true).setDescription("").setProperty(new Property().setFormatter("0")));
                 List<WorkItemField> workItemFields = SignUtil.fieldAll(meegoParam);
                 List<WorkItemField> collectSomeOne = workItemFields.stream().filter(a -> a.getWorkItemScopes().contains(meegoParam.getTypeKey())).collect(Collectors.toList());
                 for (WorkItemField workItemField : collectSomeOne) {
-                    stockfields.add(new Field().setFieldName(workItemField.getFieldName()).setFieldType(StringUtil.coventFieldType(workItemField.getFieldTypeKey())).setIsPrimary(false).setDescription(""));
+                    stockfields.add(new Field().setFieldName(workItemField.getFieldName()).setFieldType(StringUtil.coventFieldType(workItemField.getFieldTypeKey())).setIsPrimary(false).setDescription("").setFieldId(workItemField.getFieldKey()));
                 }
                 List<WorkItemField> collectAll = workItemFields.stream().filter(a -> a.getWorkItemScopes().contains("_all")).collect(Collectors.toList());
                 for (WorkItemField workItemField : collectAll) {
-                    stockfields.add(new Field().setFieldName(workItemField.getFieldName()).setFieldType(StringUtil.coventFieldType(workItemField.getFieldTypeKey())).setIsPrimary(false).setDescription(""));
+                    stockfields.add(new Field().setFieldName(workItemField.getFieldName()).setFieldType(StringUtil.coventFieldType(workItemField.getFieldTypeKey())).setIsPrimary(false).setDescription("").setFieldId(workItemField.getFieldKey()));
                 }
 
                 List<RoleField> roleFields = SignUtil.fieldAllRole(meegoParam);
                 dealRoleFields(roleFields, stockfields);
 
                 stockfields = stockfields.stream().filter(s -> s.getFieldType() != -1).collect(Collectors.toList());
-                for (int i = 0; i < stockfields.size(); i++) {
-                    if (i == 0) {
-                        continue;
-                    }
-                    stockfields.get(i).setFieldId("id" + (i + 1));
-                }
                 stockfields.add(new Field().setFieldName("工作项URL链接").setFieldId("id88888888").setFieldType(Constants.biTableLink).setIsPrimary(false).setDescription("工作项URL链接"));
                 resp.setFields(stockfields);
                 break;
@@ -130,27 +124,21 @@ public class MeegoServiceImpl implements MeegoService {
                 List<Record> stockRecords = new ArrayList<>();
                 List<SpaceEntity> spaceList = spaceList(req);
                 List<Field> stockfields = new ArrayList<>();
-                stockfields.add(new Field().setFieldId("id1").setFieldKey("id").setFieldType(Constants.biTableNum));
+                stockfields.add(new Field().setFieldId("field_000001").setFieldKey("id").setFieldType(Constants.biTableNum));
                 List<WorkItemField> workItemFields = SignUtil.fieldAll(meegoParam);
                 List<WorkItemField> collectSomeOne = workItemFields.stream().filter(a -> a.getWorkItemScopes().contains(meegoParam.getTypeKey())).collect(Collectors.toList());
                 for (WorkItemField workItemField : collectSomeOne) {
-                    stockfields.add(new Field().setFieldKey(workItemField.getFieldKey()).setFieldType(StringUtil.coventFieldType(workItemField.getFieldTypeKey())).setFieldName(workItemField.getFieldTypeKey()));
+                    stockfields.add(new Field().setFieldKey(workItemField.getFieldKey()).setFieldType(StringUtil.coventFieldType(workItemField.getFieldTypeKey())).setFieldName(workItemField.getFieldTypeKey()).setFieldId(workItemField.getFieldKey()));
                 }
                 List<WorkItemField> collectAll = workItemFields.stream().filter(a -> a.getWorkItemScopes().contains("_all")).collect(Collectors.toList());
                 for (WorkItemField workItemField : collectAll) {
-                    stockfields.add(new Field().setFieldKey(workItemField.getFieldKey()).setFieldType(StringUtil.coventFieldType(workItemField.getFieldTypeKey())).setFieldName(workItemField.getFieldTypeKey()));
+                    stockfields.add(new Field().setFieldKey(workItemField.getFieldKey()).setFieldType(StringUtil.coventFieldType(workItemField.getFieldTypeKey())).setFieldName(workItemField.getFieldTypeKey()).setFieldId(workItemField.getFieldKey()));
                 }
 
                 List<RoleField> roleFields = SignUtil.fieldAllRole(meegoParam);
                 dealRoleFields(roleFields, stockfields);
 
                 stockfields = stockfields.stream().filter(s -> s.getFieldType() != -1).collect(Collectors.toList());
-                for (int i = 0; i < stockfields.size(); i++) {
-                    if (i == 0) {
-                        continue;
-                    }
-                    stockfields.get(i).setFieldId("id" + (i + 1));
-                }
 
                 // 处理所有用户映射和关联工作项映射
                 List<String> userIds = new ArrayList<>();
@@ -308,7 +296,7 @@ public class MeegoServiceImpl implements MeegoService {
     private void dealRoleFields(List<RoleField> roleFields, List<Field> stockfields) {
         if (!ArrUtil.isEmpty(roleFields)) {
             for (RoleField roleField : roleFields) {
-                stockfields.add(new Field().setIsRoleField(true).setFieldKey(roleField.getId()).setFieldType(Constants.biTableText).setFieldName(roleField.getName()));
+                stockfields.add(new Field().setIsRoleField(true).setFieldKey(roleField.getId()).setFieldType(Constants.biTableText).setFieldName(roleField.getName()).setFieldId(roleField.getId()));
             }
         }
     }
