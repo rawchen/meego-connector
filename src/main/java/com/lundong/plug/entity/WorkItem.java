@@ -59,5 +59,8 @@ public class WorkItem {
     @JSONField(name = "fields")
     List<WorkItemField> workItemFields;
 
+    @JSONField(name = "relation_fields_detail")
+    List<RelationFieldsDetail> relationFieldsDetail;
+
 
 }

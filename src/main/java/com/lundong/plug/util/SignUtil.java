@@ -23,9 +23,11 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  * @author shuangquan.chen
@@ -129,7 +131,7 @@ public class SignUtil {
             pageToken = "1";
         }
         if (StrUtil.isEmpty(maxPageSize) || "1000".equals(maxPageSize)) {
-            maxPageSize = "200";
+            maxPageSize = "500";
         }
         int count = ((Integer.parseInt(pageToken) - 1) * Integer.parseInt(maxPageSize)) / 50;
         int countFor = (Integer.parseInt(maxPageSize)) / 50;
@@ -144,6 +146,7 @@ public class SignUtil {
                 int limitSize = count + (i + 1);
                 String paramDetailJson = "{\n" +
                         "    \"work_item_type_keys\": [\"" + meegoParam.getTypeKey() + "\"],\n" +
+                        "    \"expand\":{\"relation_fields_detail\":true}," +
                         "    \"page_size\": 50,\n" +
                         "    \"page_num\": " + limitSize + "\n" +
                         "}";
@@ -378,5 +381,89 @@ public class SignUtil {
             }
         }
         return workItemTempList;
+    }
+
+    public static List<WorkItemTemp> workItemRelationFieldsDetail(MeegoParam meegoParam, List<WorkItem> workItems) {
+        if (ArrUtil.isEmpty(workItems)) {
+            return Collections.emptyList();
+        }
+        List<WorkItemTemp> workItemTempList = new ArrayList<>();
+
+        // 将所有relation_fields_detail的detail集合
+        List<RelationFieldsDetailDetail> detailDetails = new ArrayList<>();
+        for (WorkItem workItem : workItems) {
+            List<RelationFieldsDetail> relationFieldsDetail = workItem.getRelationFieldsDetail();
+            if (relationFieldsDetail != null) {
+                for (RelationFieldsDetail fieldsDetail : relationFieldsDetail) {
+                    detailDetails.addAll(fieldsDetail.getDetail());
+                }
+            }
+        }
+
+        // 去重story_id
+        detailDetails = detailDetails.stream()
+                .filter(distinctByKey(RelationFieldsDetailDetail::getStoryId))
+                .collect(Collectors.toList());
+        // 按work_item_type_key分类获取<String, List<String>>查询
+        Map<String, List<RelationFieldsDetailDetail>> groupByMap = new HashMap<>();
+        for (RelationFieldsDetailDetail detail : detailDetails) {
+            if (!groupByMap.containsKey(detail.getWorkItemTypeKey())) {
+                groupByMap.put(detail.getWorkItemTypeKey(), new ArrayList<>());
+            }
+            groupByMap.get(detail.getWorkItemTypeKey()).add(detail);
+        }
+        // 输出分组结果查询
+        for (String key : groupByMap.keySet()) {
+            List<RelationFieldsDetailDetail> group = groupByMap.get(key);
+            List<Long> storyIdStrings = group.stream()
+                    .map(RelationFieldsDetailDetail::getStoryId)
+                    .collect(Collectors.toList());
+            workItemTempList.addAll(workItemStoryQuery(meegoParam, storyIdStrings, key));
+        }
+        // 组装到一起
+        workItemTempList = workItemTempList.stream()
+                .filter(distinctByKey(WorkItemTemp::getId))
+                .collect(Collectors.toList());
+        return workItemTempList;
+    }
+
+    private static List<WorkItemTemp> workItemStoryQuery(MeegoParam meegoParam, List<Long> storyIdStrings, String workItemTypeKey) {
+        List<WorkItemTemp> workItemTempList = new ArrayList<>();
+        if (ArrUtil.isEmpty(storyIdStrings) || StrUtil.isEmpty(workItemTypeKey)) {
+            return Collections.emptyList();
+        }
+        String token = SignUtil.token(meegoParam);
+        List<List<Long>> split = CollUtil.split(storyIdStrings, 50);
+        for (List<Long> intgerList : split) {
+            try {
+                JSONObject objectParam = new JSONObject();
+                JSONArray jsonArrayParam = new JSONArray();
+                jsonArrayParam.addAll(intgerList);
+                objectParam.put("work_item_ids", jsonArrayParam);
+                String resultString = HttpRequest.post(Constants.MEEGO_URL + "/open_api/" + meegoParam.getProjectKey() + "/work_item/" + workItemTypeKey + "/query")
+                        .body(objectParam.toJSONString())
+                        .header("X-PLUGIN-TOKEN", token)
+                        .header("X-USER-KEY", meegoParam.getUserKey())
+                        .execute().body();
+                log.info("获取工作项详情列表接口: {}", StringUtil.subLog(resultString));
+                JSONObject jsonObject = JSONObject.parseObject(resultString);
+                if (jsonObject != null && jsonObject.getInteger("err_code") == 0) {
+                    JSONArray jsonArray = jsonObject.getJSONArray("data");
+                    if (jsonArray != null && !ArrUtil.isEmpty(jsonArray)) {
+                        workItemTempList.addAll(JSONArray.parseArray(jsonArray.toJSONString(), WorkItemTemp.class));
+                    }
+                } else {
+                    log.error("获取工作项详情列表接口出错: {}", resultString);
+                }
+            } catch (Exception e) {
+                log.error("获取工作项详情列表接口异常：", e);
+            }
+        }
+        return workItemTempList;
+    }
+
+    private static <T> Predicate<T> distinctByKey(Function<? super T, Object> keyExtractor) {
+        Map<Object, Boolean> seen = new ConcurrentHashMap<>();
+        return t -> seen.putIfAbsent(keyExtractor.apply(t), Boolean.TRUE) == null;
     }
 }

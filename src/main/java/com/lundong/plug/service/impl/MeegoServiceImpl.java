@@ -178,7 +178,8 @@ public class MeegoServiceImpl implements MeegoService {
                 List<String> distinctWorkItemIds = workItemIds.stream().distinct().collect(Collectors.toList());
                 List<ProjectUser> projectUsers  = SignUtil.user(meegoParam, distinctUserIds);
                 log.info("需要转换的itemIds：{}", distinctWorkItemIds.size());
-                List<WorkItemTemp> workItemTemps  = SignUtil.workItemTemp(meegoParam, distinctWorkItemIds);
+//                List<WorkItemTemp> workItemTemps  = SignUtil.workItemTemp(meegoParam, distinctWorkItemIds);
+                List<WorkItemTemp> workItemTemps  = SignUtil.workItemRelationFieldsDetail(meegoParam, workItems);
 
                 for (int i = 0; i < workItems.size(); i++) {
 
@@ -412,7 +413,7 @@ public class MeegoServiceImpl implements MeegoService {
         int maxPageSize;
         int currentPage;
         if (StrUtil.isEmpty(maxPageSizeStr) || "1000".equals(maxPageSizeStr)) {
-            maxPageSize = 200;
+            maxPageSize = 500;
         } else {
             maxPageSize = Integer.valueOf(maxPageSizeStr);
         }
