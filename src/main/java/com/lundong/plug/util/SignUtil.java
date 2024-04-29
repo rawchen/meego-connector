@@ -131,7 +131,7 @@ public class SignUtil {
             pageToken = "1";
         }
         if (StrUtil.isEmpty(maxPageSize) || "1000".equals(maxPageSize)) {
-            maxPageSize = "500";
+            maxPageSize = "200";
         }
         int count = ((Integer.parseInt(pageToken) - 1) * Integer.parseInt(maxPageSize)) / 50;
         int countFor = (Integer.parseInt(maxPageSize)) / 50;

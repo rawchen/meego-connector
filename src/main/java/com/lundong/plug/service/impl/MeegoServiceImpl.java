@@ -413,7 +413,7 @@ public class MeegoServiceImpl implements MeegoService {
         int maxPageSize;
         int currentPage;
         if (StrUtil.isEmpty(maxPageSizeStr) || "1000".equals(maxPageSizeStr)) {
-            maxPageSize = 500;
+            maxPageSize = 200;
         } else {
             maxPageSize = Integer.valueOf(maxPageSizeStr);
         }
