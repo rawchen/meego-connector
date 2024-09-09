@@ -90,8 +90,13 @@ public class MainController {
 //        }
 
         log.info("req: {}", req);
-        RecordResp resp = meegoService.records(req);
-        return R.ok(resp);
+        RecordResp resp;
+        try {
+            resp = meegoService.records(req);
+            return R.ok(resp);
+        } catch (RuntimeException e) {
+            return R.fail(e.getMessage(), null);
+        }
     }
 
     /**

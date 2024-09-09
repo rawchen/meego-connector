@@ -41,7 +41,7 @@ public class MeegoServiceImpl implements MeegoService {
     @Autowired
     TenantAuthService tenantAuthService;
 
-    public WorkItemPage queryWorkItemList(MeegoParam meegoParam, Long lineLimitNumber, String pageToken, String maxPageSize) {
+    public WorkItemPage queryWorkItemList(MeegoParam meegoParam, Long lineLimitNumber, String pageToken, String maxPageSize) throws RuntimeException {
         return SignUtil.workItemList(meegoParam, pageToken, maxPageSize);
 //        if (workItems.size() >= lineLimitNumber) {
 //            workItems = workItems.stream().limit(lineLimitNumber).collect(Collectors.toList());
@@ -71,6 +71,7 @@ public class MeegoServiceImpl implements MeegoService {
                 }
                 stockfields.add(new Field().setFieldName(resp.getTableName() + "ID").setFieldId("field_000001").setFieldType(Constants.biTableNum).setIsPrimary(true).setDescription("").setProperty(new Property().setFormatter("0")));
                 List<WorkItemField> workItemFields = SignUtil.fieldAll(meegoParam);
+                workItemFields = workItemFields.stream().filter(n -> !"vote_option".equals(n.getFieldTypeKey())).collect(Collectors.toList());
                 List<WorkItemField> collectSomeOne = workItemFields.stream().filter(a -> a.getWorkItemScopes().contains(meegoParam.getTypeKey())).collect(Collectors.toList());
                 for (WorkItemField workItemField : collectSomeOne) {
                     stockfields.add(new Field().setFieldName(workItemField.getFieldName()).setFieldType(StringUtil.coventFieldType(workItemField.getFieldTypeKey())).setIsPrimary(false).setDescription("").setFieldId(workItemField.getFieldKey()));
@@ -92,7 +93,7 @@ public class MeegoServiceImpl implements MeegoService {
     }
 
     @Override
-    public RecordResp records(CommonReq req) {
+    public RecordResp records(CommonReq req) throws RuntimeException {
 
         Long lineLimitNumber = 0L;
         log.info("req params: {}", req.getParams());
@@ -126,6 +127,7 @@ public class MeegoServiceImpl implements MeegoService {
                 List<Field> stockfields = new ArrayList<>();
                 stockfields.add(new Field().setFieldId("field_000001").setFieldKey("id").setFieldType(Constants.biTableNum));
                 List<WorkItemField> workItemFields = SignUtil.fieldAll(meegoParam);
+                workItemFields = workItemFields.stream().filter(n -> !"vote_option".equals(n.getFieldTypeKey())).collect(Collectors.toList());
                 List<WorkItemField> collectSomeOne = workItemFields.stream().filter(a -> a.getWorkItemScopes().contains(meegoParam.getTypeKey())).collect(Collectors.toList());
                 for (WorkItemField workItemField : collectSomeOne) {
                     stockfields.add(new Field().setFieldKey(workItemField.getFieldKey()).setFieldType(StringUtil.coventFieldType(workItemField.getFieldTypeKey())).setFieldName(workItemField.getFieldTypeKey()).setFieldId(workItemField.getFieldKey()));

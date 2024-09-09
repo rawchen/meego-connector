@@ -124,7 +124,7 @@ public class SignUtil {
      */
     // 第1 每页200    0-200   循环4次 pagenum=1 2 3 4
     // 第2 每页200    200-400 循环4次 pagenum=5 6 7 8
-    public static WorkItemPage workItemList(MeegoParam meegoParam, String pageToken, String maxPageSize) {
+    public static WorkItemPage workItemList(MeegoParam meegoParam, String pageToken, String maxPageSize) throws RuntimeException {
         WorkItemPage workItemPage = new WorkItemPage();
         workItemPage.setHasMore(true);
         if (StrUtil.isEmpty(pageToken)) {
@@ -137,53 +137,50 @@ public class SignUtil {
         int countFor = (Integer.parseInt(maxPageSize)) / 50;
         List<WorkItem> workItemList = new ArrayList<>();
         String token = SignUtil.token(meegoParam);
-        try {
 //            boolean haseMore = true;
-            JSONArray resultArrayNew = new JSONArray();
+        JSONArray resultArrayNew = new JSONArray();
 //            int pageNumber = 1;
 
-            for (int i = 0; i < countFor; i++) {
-                int limitSize = count + (i + 1);
-                String paramDetailJson = "{\n" +
-                        "    \"work_item_type_keys\": [\"" + meegoParam.getTypeKey() + "\"],\n" +
-                        "    \"expand\":{\"relation_fields_detail\":true}," +
-                        "    \"page_size\": 50,\n" +
-                        "    \"page_num\": " + limitSize + "\n" +
-                        "}";
+        for (int i = 0; i < countFor; i++) {
+            int limitSize = count + (i + 1);
+            String paramDetailJson = "{\n" +
+                    "    \"work_item_type_keys\": [\"" + meegoParam.getTypeKey() + "\"],\n" +
+                    "    \"expand\":{\"relation_fields_detail\":true}," +
+                    "    \"page_size\": 50,\n" +
+                    "    \"page_num\": " + limitSize + "\n" +
+                    "}";
 
-                String resultString = HttpRequest.post(Constants.MEEGO_URL + "/open_api/" + meegoParam.getProjectKey() + Constants.WORK_ITEM_FILTER)
-                        .body(paramDetailJson)
-                        .header("X-PLUGIN-TOKEN", token)
-                        .header("X-USER-KEY", meegoParam.getUserKey())
-                        .execute().body();
+            String resultString = HttpRequest.post(Constants.MEEGO_URL + "/open_api/" + meegoParam.getProjectKey() + Constants.WORK_ITEM_FILTER)
+                    .body(paramDetailJson)
+                    .header("X-PLUGIN-TOKEN", token)
+                    .header("X-USER-KEY", meegoParam.getUserKey())
+                    .execute().body();
 
-                //            log.info("金蝶组织列表查询参数: {}", paramDetailJson);
-                log.info("workItemList方法获取指定的工作项列表(非跨空间)接口: {}", StringUtil.subLog(resultString));
-                JSONObject jsonObject = JSONObject.parseObject(resultString);
-                JSONArray resultArray = null;
-                if (jsonObject.getInteger("err_code") == 0) {
-                    if (jsonObject.getJSONArray("data") != null && !ArrUtil.isEmpty(jsonObject.getJSONArray("data"))) {
-                        resultArray = jsonObject.getJSONArray("data");
-                    } else {
-                        workItemPage.setHasMore(false);
-                        break;
-                    }
+            //            log.info("金蝶组织列表查询参数: {}", paramDetailJson);
+            log.info("workItemList方法获取指定的工作项列表(非跨空间)接口: {}", StringUtil.subLog(resultString));
+            JSONObject jsonObject = JSONObject.parseObject(resultString);
+            JSONArray resultArray = null;
+            if (jsonObject.getInteger("err_code") == 0) {
+                if (jsonObject.getJSONArray("data") != null && !ArrUtil.isEmpty(jsonObject.getJSONArray("data"))) {
+                    resultArray = jsonObject.getJSONArray("data");
                 } else {
-                    log.error("workItemList方法获取指定的工作项列表(非跨空间)接口: {}", resultString);
+                    workItemPage.setHasMore(false);
+                    break;
                 }
-                if (resultArray != null && !resultArray.isEmpty()) {
-                    resultArrayNew.addAll(resultArray);
-                }
+            } else {
+                log.error("workItemList方法获取指定的工作项列表(非跨空间)接口: {}", resultString);
+                throw new RuntimeException("接口请求异常，resultString：" + resultString);
             }
+            if (resultArray != null && !resultArray.isEmpty()) {
+                resultArrayNew.addAll(resultArray);
+            }
+        }
 
-            // 解析
-            for (int i = 0; i < resultArrayNew.size(); i++) {
-                WorkItem workItem = JSONArray.toJavaObject(resultArrayNew.getJSONObject(i), WorkItem.class);
+        // 解析
+        for (int i = 0; i < resultArrayNew.size(); i++) {
+            WorkItem workItem = JSONArray.toJavaObject(resultArrayNew.getJSONObject(i), WorkItem.class);
 //                System.out.println(workItem);
-                workItemList.add(workItem);
-            }
-        } catch (Exception e) {
-            log.error("workItemList方法异常：", e);
+            workItemList.add(workItem);
         }
         workItemPage.setWorkItemList(workItemList);
         workItemPage.setNextPageToken(String.valueOf(Integer.parseInt(pageToken) + 1));
