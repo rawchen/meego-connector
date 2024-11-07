@@ -21,6 +21,7 @@ import com.lundong.plug.util.ArrUtil;
 import com.lundong.plug.util.SignUtil;
 import com.lundong.plug.util.StringUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -71,6 +72,9 @@ public class MeegoServiceImpl implements MeegoService {
                 }
                 stockfields.add(new Field().setFieldName(resp.getTableName() + "ID").setFieldId("field_000001").setFieldType(Constants.biTableNum).setIsPrimary(true).setDescription("").setProperty(new Property().setFormatter("0")));
                 List<WorkItemField> workItemFields = SignUtil.fieldAll(meegoParam);
+                if(CollectionUtils.isEmpty(workItemFields)){
+                    return null;
+                }
                 workItemFields = workItemFields.stream().filter(n -> !"vote_option".equals(n.getFieldTypeKey())).collect(Collectors.toList());
                 List<WorkItemField> collectSomeOne = workItemFields.stream().filter(a -> a.getWorkItemScopes().contains(meegoParam.getTypeKey())).collect(Collectors.toList());
                 for (WorkItemField workItemField : collectSomeOne) {
