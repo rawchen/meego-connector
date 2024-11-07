@@ -4,7 +4,7 @@
   "type": "data_connector",
   "extraData": {
     "disabledPeriodicSync": false,
-    "dataSourceConfigUiUri": "https://rawchen.mynatapp.cc/",
+    "dataSourceConfigUiUri": "https://project.lundong.com.cn/",
     "initHeight": 600,
     "initWidth": 520
   },

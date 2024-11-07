@@ -11,6 +11,8 @@ import cn.hutool.crypto.symmetric.AES;
 import cn.hutool.crypto.symmetric.DES;
 import com.lundong.plug.config.Constants;
 import com.lundong.plug.entity.ProjectUser;
+import com.lundong.plug.entity.WorkItemPage;
+import com.lundong.plug.entity.param.CommonReq;
 import com.lundong.plug.entity.param.MeegoParam;
 import com.lundong.plug.service.MeegoService;
 import com.lundong.plug.service.TenantAuthService;
@@ -128,10 +130,10 @@ public class AppTest {
     @Test
     void test12() {
         MeegoParam meegoParam = new MeegoParam();
-        meegoParam.setPluginId("xx");
-        meegoParam.setPluginSecret("xx");
-        meegoParam.setUserKey("xx");
-        meegoParam.setProjectKey("xx");
+        meegoParam.setPluginId("MII_65E6D63E1F558001");
+        meegoParam.setPluginSecret("9A4ABD05EAA4F6F94768FCE3264971AC");
+        meegoParam.setUserKey("7313814606542061572");
+        meegoParam.setProjectKey("658013f78b7ac084743332a2");
 
 //        List<WorkItemField> workItemFields = SignUtil.fieldAll(meegoParam);
 //        for (WorkItemField workItemField : workItemFields) {
@@ -139,10 +141,40 @@ public class AppTest {
 //        }
 
         ArrayList<String> strings = new ArrayList<>();
-        strings.add("7313814606542061572");
+//        strings.add("7313814606542061572");
         List<ProjectUser> projectUsers = SignUtil.user(meegoParam, strings);
         for (ProjectUser projectUser : projectUsers) {
             System.out.println(projectUser);
         }
+    }
+
+    @Test
+    void test13() {
+        MeegoParam meegoParam = new MeegoParam();
+        meegoParam.setPluginId("MII_6620B1383885C004");
+        meegoParam.setPluginSecret("2B5AEE8B68A39BC26491F1403EB3D360");
+        meegoParam.setUserKey("7337412932290068484");
+        meegoParam.setProjectKey("65645c9f6184464583a46b3b");
+        meegoParam.setTypeKey("657bb3aca1df9f935e45b05d");
+        WorkItemPage workItemPage = SignUtil.workItemList(meegoParam, "13", "200");
+        System.out.println(workItemPage.getWorkItemList().size());
+        System.out.println(workItemPage.getHasMore());
+        System.out.println(workItemPage.getNextPageToken());
+
+    }
+
+    @Test
+    void test14() {
+        MeegoParam meegoParam = new MeegoParam();
+        meegoParam.setPluginId("MII_6620B1383885C004");
+        meegoParam.setPluginSecret("2B5AEE8B68A39BC26491F1403EB3D360");
+        meegoParam.setUserKey("7337412932290068484");
+        meegoParam.setProjectKey("65645c9f6184464583a46b3b");
+        meegoParam.setTypeKey("657bb3aca1df9f935e45b05d");
+        SignUtil.workItemList(meegoParam, "13", "200");
+        CommonReq commonReq = new CommonReq();
+        commonReq.setContext("");
+        commonReq.setParams("");
+//        RecordResp resp = meegoService.records();
     }
 }
