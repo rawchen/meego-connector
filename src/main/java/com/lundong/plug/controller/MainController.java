@@ -75,6 +75,9 @@ public class MainController {
 //        MeegoParam meegoParam = JSONUtil.toBean(params.getDatasourceConfig(), MeegoParam.class);
 //        BitCommonContext context = JSONUtil.toBean(req.getContext(), BitCommonContext.class);
         TableMetaResp tableMetaResp = meegoService.tableMeta(req);
+        if(tableMetaResp == null){
+            return R.fail();
+        }
         return R.ok(tableMetaResp);
     }
 
