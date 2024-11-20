@@ -337,6 +337,7 @@ public class SignUtil {
             }
         } catch (Exception e) {
             log.error("fieldAllRole方法异常：", e);
+            return null;
         }
         return roleFields;
     }

@@ -72,7 +72,7 @@ public class MeegoServiceImpl implements MeegoService {
                 }
                 stockfields.add(new Field().setFieldName(resp.getTableName() + "ID").setFieldId("field_000001").setFieldType(Constants.biTableNum).setIsPrimary(true).setDescription("").setProperty(new Property().setFormatter("0")));
                 List<WorkItemField> workItemFields = SignUtil.fieldAll(meegoParam);
-                if(CollectionUtils.isEmpty(workItemFields)){
+                if(CollectionUtils.isEmpty(workItemFields)) {
                     return null;
                 }
                 workItemFields = workItemFields.stream().filter(n -> !"vote_option".equals(n.getFieldTypeKey())).collect(Collectors.toList());
@@ -85,11 +85,27 @@ public class MeegoServiceImpl implements MeegoService {
                     stockfields.add(new Field().setFieldName(workItemField.getFieldName()).setFieldType(StringUtil.coventFieldType(workItemField.getFieldTypeKey())).setIsPrimary(false).setDescription("").setFieldId(workItemField.getFieldKey()));
                 }
 
+                int roleFileQuantity = 0;
                 List<RoleField> roleFields = SignUtil.fieldAllRole(meegoParam);
+                if (roleFields == null) {
+                    return null;
+                }
+                log.info("stockfields size: {}", stockfields.size());
+                if (!ArrUtil.isEmpty(roleFields)) {
+                    roleFileQuantity = roleFields.size();
+                }
+
+                log.info("roleFileQuantity size: {}",roleFileQuantity);
+
+//                stockfields = stockfields.stream().limit(52 - roleFileQuantity).collect(Collectors.toList());
+
                 dealRoleFields(roleFields, stockfields);
+
+                stockfields = stockfields.stream().limit(298).collect(Collectors.toList());
 
                 stockfields = stockfields.stream().filter(s -> s.getFieldType() != -1).collect(Collectors.toList());
                 stockfields.add(new Field().setFieldName("工作项URL链接").setFieldId("id88888888").setFieldType(Constants.biTableLink).setIsPrimary(false).setDescription("工作项URL链接"));
+                log.info("stockfields size: {}", stockfields.size());
                 resp.setFields(stockfields);
                 break;
         }
@@ -105,6 +121,7 @@ public class MeegoServiceImpl implements MeegoService {
         MeegoParam meegoParam = JSONUtil.toBean(params.getDatasourceConfig(), MeegoParam.class);
         BitCommonContext context = JSONUtil.toBean(req.getContext(), BitCommonContext.class);
         String tenantKey = context.getTenantKey();
+        log.info("params maxPageSize: {}", params.getMaxPageSize());
         log.info("records tenantKey: {}", tenantKey);
         log.info("userTenantKey: {}", context.getUserTenantKey());
         TenantAuth tenantAuth = tenantAuthMapper.selectOne(
@@ -112,7 +129,7 @@ public class MeegoServiceImpl implements MeegoService {
         if (tenantAuth != null) {
             lineLimitNumber = tenantAuthService.rowNumberLimit(tenantAuth.getTenantKey());
         } else {
-            log.error("根据租户获取不到行数规则");
+            log.info("根据租户获取不到行数规则");
             lineLimitNumber = 100000L;
         }
 
@@ -141,8 +158,23 @@ public class MeegoServiceImpl implements MeegoService {
                     stockfields.add(new Field().setFieldKey(workItemField.getFieldKey()).setFieldType(StringUtil.coventFieldType(workItemField.getFieldTypeKey())).setFieldName(workItemField.getFieldTypeKey()).setFieldId(workItemField.getFieldKey()));
                 }
 
+                int roleFileQuantity = 0;
                 List<RoleField> roleFields = SignUtil.fieldAllRole(meegoParam);
+                if (roleFields == null) {
+                    return null;
+                }
+                log.info("stockfields size: {}", stockfields.size());
+                if (!ArrUtil.isEmpty(roleFields)) {
+                    roleFileQuantity = roleFields.size();
+                }
+
+                log.info("roleFileQuantity size: {}",roleFileQuantity);
+
+//                stockfields = stockfields.stream().limit(52 - roleFileQuantity).collect(Collectors.toList());
+
                 dealRoleFields(roleFields, stockfields);
+
+                stockfields = stockfields.stream().limit(298).collect(Collectors.toList());
 
                 stockfields = stockfields.stream().filter(s -> s.getFieldType() != -1).collect(Collectors.toList());
 
