@@ -1,4 +1,4 @@
-## 多维表格连接器插件金蝶云
+## 多维表格连接器插件飞书项目
 > 此项目使用 [Spring Boot](https://spring.io/projects/spring-boot/) / [React](https://react.dev/) 架构。以下是有关如何使用的快速指南。
 
 
@@ -20,7 +20,7 @@ front/.env.production
 
 ### 端口
 ```bash
-8088
+6001
 ```
 
 ## 启动
